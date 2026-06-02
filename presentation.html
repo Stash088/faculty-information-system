@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ВКР — Информационный ресурс ИТНиЦТ АГУ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f5f5f5;
+      --text: #222222;
+      --text-light: #555555;
+      --accent: #2c5282;
+      --accent-light: #3182ce;
+      --border: #dddddd;
+      --success: #276749;
+      --warning: #c05621;
+    }
+
+    html, body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: #333;
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Базовые размеры: слайд 1920×1080, отступы 80px */
+    .deck {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      transform-origin: top left;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px;
+      height: 1080px;
+      padding: 80px;
+      display: none;
+      flex-direction: column;
+      background: var(--bg);
+    }
+
+    .slide.active { display: flex; }
+
+    /* Прогресс и навигация */
+    .progress-bar {
+      position: fixed; top: 0; left: 0;
+      height: 4px; background: var(--accent);
+      transition: width 0.4s ease; z-index: 1000;
+    }
+    .slide-counter {
+      position: fixed; bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px; color: #888; z-index: 1000;
+      font-family: Arial, sans-serif;
+    }
+    .nav-hint {
+      position: fixed; bottom: 20px; right: 40px;
+      font-size: 12px; color: #888; z-index: 1000;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Типографика */
+    h1 { font-size: 62px; font-weight: normal; line-height: 1.2; margin-bottom: 24px; }
+    h2 { font-size: 48px; font-weight: normal; margin-bottom: 36px; color: var(--accent); border-bottom: 2px solid var(--border); padding-bottom: 14px; }
+    h3 { font-size: 30px; font-weight: bold; margin-bottom: 20px; color: var(--text); }
+    p { font-size: 26px; line-height: 1.6; color: var(--text-light); }
+    ul { font-size: 26px; line-height: 1.8; color: var(--text-light); margin-left: 36px; }
+    li { margin-bottom: 10px; }
+
+    /* Сетки */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
+    .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+    .four-col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 24px; flex: 1; }
+
+    /* Карточки */
+    .card {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 28px;
+    }
+    .card h3 { font-size: 24px; margin-bottom: 14px; }
+    .card p { font-size: 20px; }
+
+    /* Список с буллетами */
+    .bullet-list { list-style: none; }
+    .bullet-list li { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 18px; font-size: 26px; }
+    .bullet-list li::before { content: "—"; font-size: 26px; color: var(--accent); flex-shrink: 0; }
+
+    /* Номерованный список */
+    .num-list { list-style: none; counter-reset: item; }
+    .num-list li { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 16px; font-size: 26px; }
+    .num-list li::before { counter-increment: item; content: counter(item); background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; font-family: Arial, sans-serif; font-weight: bold; }
+
+    /* Статистика */
+    .stat-card {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 24px;
+      text-align: center;
+    }
+    .stat-value { font-size: 40px; font-weight: bold; color: var(--accent); }
+    .stat-label { font-size: 18px; color: var(--text-light); margin-top: 10px; }
+
+    /* Таблица */
+    .db-table {
+      background: var(--bg-alt);
+      border: 2px solid var(--accent);
+      border-radius: 4px;
+      overflow: hidden;
+      min-width: 180px;
+    }
+    .db-table-header {
+      background: var(--accent);
+      padding: 10px 16px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    .db-table-body { padding: 8px 0; }
+    .db-field {
+      display: flex;
+      align-items: center;
+      padding: 6px 16px;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      gap: 12px;
+    }
+    .db-field-pk { color: var(--warning); font-weight: bold; }
+    .db-field-fk { color: var(--success); }
+
+    /* Скриншот */
+    .screenshot-frame {
+      background: var(--bg-alt); border: 1px solid var(--border);
+      border-radius: 4px; padding: 12px;
+    }
+    .screenshot-header { display: flex; gap: 6px; margin-bottom: 10px; }
+    .screenshot-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+    .screenshot-content {
+      background: #eee; border-radius: 4px;
+      min-height: 140px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: var(--text-light);
+      font-family: Arial, sans-serif;
+    }
+
+    /* Архитектура */
+    .arch-diagram { display: flex; flex-direction: column; gap: 20px; flex: 1; justify-content: center; }
+    .arch-layer { display: flex; align-items: center; gap: 30px; }
+    .arch-box {
+      background: var(--bg-alt); border: 2px solid var(--text);
+      border-radius: 4px; padding: 20px 32px; text-align: center; flex: 1;
+      font-family: Arial, sans-serif;
+    }
+    .arch-box.highlight { border-color: var(--accent); background: #e8f0f8; }
+    .arch-box h4 { font-size: 20px; margin-bottom: 4px; font-weight: bold; }
+    .arch-box p { font-size: 16px; color: var(--text-light); }
+    .arch-arrow { font-size: 36px; color: var(--text-light); }
+
+/* Tech stack */
+    .tech-item {
+      display: flex; align-items: center; gap: 18px;
+      padding: 20px; background: var(--bg-alt);
+      border: 1px solid var(--border); border-radius: 4px; margin-bottom: 14px;
+      font-family: Arial, sans-serif;
+    }
+    .tech-badge {
+      background: var(--accent); color: white;
+      padding: 5px 12px; border-radius: 3px;
+      font-size: 13px; font-weight: bold;
+    }
+    .tech-name { font-size: 22px; font-weight: bold; }
+    .tech-desc { font-size: 17px; color: var(--text-light); }
+
+    /* Проблемы */
+    .problem-item, .benefit-item {
+      padding: 24px; border-radius: 4px; margin-bottom: 0;
+    }
+    .problem-item { background: #fff5f5; border-left: 4px solid var(--warning); }
+    .problem-item h4 { font-size: 22px; color: var(--warning); margin-bottom: 10px; font-family: Arial, sans-serif; }
+    .benefit-item { background: #f0fff4; border-left: 4px solid var(--success); }
+    .benefit-item h4 { font-size: 22px; color: var(--success); margin-bottom: 10px; font-family: Arial, sans-serif; }
+
+    /* Таблица с данными */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 20px; }
+    .data-table th { background: var(--accent); color: white; padding: 14px 18px; text-align: left; font-family: Arial, sans-serif; font-weight: bold; }
+    .data-table td { padding: 14px 18px; border-bottom: 1px solid var(--border); font-family: Arial, sans-serif; }
+    .data-table tr:nth-child(even) { background: var(--bg-alt); }
+
+    /* Таблица */
+    .db-table {
+      background: var(--bg-alt);
+      border: 2px solid var(--accent);
+      border-radius: 4px;
+      overflow: hidden;
+      min-width: 180px;
+    }
+    .db-table-header {
+      background: var(--accent);
+      padding: 12px 18px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    .db-table-body { padding: 10px 0; }
+    .db-field {
+      display: flex;
+      align-items: center;
+      padding: 7px 18px;
+      font-size: 15px;
+      font-family: 'Courier New', monospace;
+      gap: 12px;
+    }
+    .db-field-pk { color: var(--warning); font-weight: bold; }
+    .db-field-fk { color: var(--success); }
+      font-size: 24px;
+      color: var(--text-light);
+      margin-top: 16px;
+      font-style: italic;
+    }
+    .slide-title .meta-block {
+      display: flex; gap: 80px;
+      margin-top: 50px;
+      font-family: Arial, sans-serif;
+    }
+    .slide-title .meta-item { text-align: center; }
+    .slide-title .meta-label { font-size: 16px; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .slide-title .meta-value { font-size: 26px; font-weight: bold; }
+    .slide-title .footer {
+      margin-top: 60px;
+      font-size: 22px;
+      color: var(--text-light);
+    }
+
+    /* Conclusion slide */
+    .slide-conclusion {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: var(--bg);
+    }
+    .slide-conclusion .check-icon {
+      width: 100px; height: 100px;
+      background: var(--success);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 50px; color: white; margin-bottom: 36px;
+    }
+
+    /* Результаты */
+    .result-card {
+      background: #f0fff4; border: 1px solid var(--success); border-radius: 4px; padding: 26px;
+    }
+    .result-card h4 { font-size: 22px; color: var(--success); margin-bottom: 12px; font-family: Arial, sans-serif; }
+    .result-card p { font-size: 20px; }
+
+    /* Section label */
+    .section-label {
+      position: absolute; top: 32px; right: 60px;
+      font-size: 14px; color: var(--text-light);
+      font-family: Arial, sans-serif; letter-spacing: 1px;
+    }
+
+    /* Title slide */
+    .slide-title {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: var(--bg);
+    }
+    .slide-title .emblem {
+      width: 110px; height: 110px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 36px; font-size: 46px;
+    }
+    .slide-title h1 {
+      font-size: 54px;
+      max-width: 1200px;
+      line-height: 1.3;
+    }
+    .slide-title .subtitle {
+      font-size: 30px;
+      color: var(--text-light);
+      margin-top: 18px;
+      font-style: italic;
+    }
+
+    @media print {
+      .progress-bar, .slide-counter, .nav-hint { display: none; }
+      .slide { page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress-bar" id="progress"></div>
+
+  <div class="deck" id="deck">
+
+    <!-- Slide 1: Title -->
+    <div class="slide slide-title active" data-slide="1">
+      <div class="emblem">АГУ</div>
+      <h1>Информационный ресурс для информационной поддержки и методического сопровождения образовательной деятельности Института точных наук и цифровых технологий АГУ</h1>
+      <p class="subtitle">Выпускная квалификационная работа</p>
+
+      <div class="meta-block">
+        <div class="meta-item">
+          <div class="meta-label">Студент</div>
+          <div class="meta-value">Кузьминова А.А.</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Научный руководитель</div>
+          <div class="meta-value">доцент В.В. Бучацкая</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        Направление 02.03.03 — Математическое обеспечение и администрирование информационных систем<br>
+        Адыгейский государственный университет &bull; Майкоп 2026
+      </div>
+    </div>
+
+    <!-- Slide 2: Problem Statement -->
+    <div class="slide" data-slide="2">
+      <span class="section-label">Проблематика</span>
+      <h2>Проблемы существующей системы</h2>
+      <div class="grid-2x2" style="gap: 24px;">
+        <div class="problem-item">
+          <h4>Дублирование информации</h4>
+          <p style="font-size: 22px;">Разрозненные решения: сайт, соцсети, почтовые рассылки, файлы. Отсутствие согласованности данных.</p>
+        </div>
+        <div class="problem-item">
+          <h4>Трудности поиска</h4>
+          <p style="font-size: 22px;">Нет централизованного хранилища учебно-методических материалов. Преподаватели вынуждены искать в разных местах.</p>
+        </div>
+        <div class="problem-item">
+          <h4>Отсутствие единого доступа</h4>
+          <p style="font-size: 22px;">Нет централизованного управления доступом к информационным ресурсам Института.</p>
+        </div>
+        <div class="problem-item">
+          <h4>Высокая трудоёмкость</h4>
+          <p style="font-size: 22px;">Ручная координация данных, отсутствие автоматизации управленческих процессов.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: Purpose and Tasks -->
+    <div class="slide" data-slide="3">
+      <span class="section-label">Цель и задачи</span>
+      <h2>Цель и задачи ВКР</h2>
+      <div class="two-col" style="flex: 1; align-items: start;">
+        <div>
+          <h3>Цель работы</h3>
+          <div class="card">
+            <p style="color: var(--text);">Разработка информационного ресурса для комплексной информационной поддержки и методического сопровождения образовательной деятельности Института точных наук и цифровых технологий</p>
+          </div>
+        </div>
+        <div>
+          <h3>Задачи</h3>
+          <ul class="num-list">
+            <li>Анализ предметной области и информационных потоков</li>
+            <li>Проектирование архитектуры системы и базы данных</li>
+            <li>Реализация серверной и клиентской частей</li>
+            <li>Обеспечение безопасности и разграничение прав доступа</li>
+            <li>Тестирование разработанной системы</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4: System Architecture -->
+    <div class="slide" data-slide="4">
+      <span class="section-label">Архитектура</span>
+      <h2>Архитектура системы</h2>
+      <div class="arch-diagram">
+        <div class="arch-layer">
+          <div class="arch-box"><h4>Frontend</h4><p>React + Redux + MUI</p></div>
+          <span class="arch-arrow">&harr;</span>
+          <div class="arch-box highlight"><h4>API Gateway</h4><p>REST API</p></div>
+          <span class="arch-arrow">&harr;</span>
+          <div class="arch-box"><h4>Backend</h4><p>Node.js + Express</p></div>
+        </div>
+        <div style="text-align: center;">
+          <span class="arch-arrow">&darr;</span>
+        </div>
+        <div class="arch-layer" style="justify-content: center;">
+          <div class="arch-box" style="max-width: 280px;"><h4>PostgreSQL</h4><p>Реляционная СУБД</p></div>
+          <div class="arch-box" style="max-width: 280px;"><h4>Winston</h4><p>Логирование</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 5: Tech Stack -->
+    <div class="slide" data-slide="5">
+      <span class="section-label">Технологии</span>
+      <h2>Технологический стек</h2>
+      <div class="two-col" style="flex: 1;">
+        <div>
+          <h3>Backend</h3>
+          <div class="tech-item">
+            <span class="tech-badge">Runtime</span>
+            <div><div class="tech-name">Node.js 16+</div><div class="tech-desc">Асинхронное выполнение I/O-операций</div></div>
+          </div>
+          <div class="tech-item">
+            <span class="tech-badge">Framework</span>
+            <div><div class="tech-name">Express.js</div><div class="tech-desc">REST API, middleware, роутинг</div></div>
+          </div>
+          <div class="tech-item">
+            <span class="tech-badge">ORM</span>
+            <div><div class="tech-name">Sequelize</div><div class="tech-desc">Модели данных, миграции, связи</div></div>
+          </div>
+          <div class="tech-item">
+            <span class="tech-badge">DB</span>
+            <div><div class="tech-name">PostgreSQL</div><div class="tech-desc">Реляционная СУБД</div></div>
+          </div>
+        </div>
+        <div>
+          <h3>Frontend</h3>
+          <div class="tech-item">
+            <span class="tech-badge">Framework</span>
+            <div><div class="tech-name">React 18</div><div class="tech-desc">UI-компоненты, хуки, контекст</div></div>
+          </div>
+          <div class="tech-item">
+            <span class="tech-badge">State</span>
+            <div><div class="tech-name">Redux Toolkit</div><div class="tech-desc">Централизованное состояние</div></div>
+          </div>
+          <div class="tech-item">
+            <span class="tech-badge">UI</span>
+            <div><div class="tech-name">Material UI</div><div class="tech-desc">Компонентная библиотека</div></div>
+          </div>
+          <div class="tech-item">
+            <span class="tech-badge">Build</span>
+            <div><div class="tech-name">Vite</div><div class="tech-desc">Быстрая сборка и HMR</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 6: Database Schema -->
+    <div class="slide" data-slide="6">
+      <span class="section-label">База данных</span>
+      <h2>Структура базы данных</h2>
+      <div style="display: flex; gap: 30px; flex: 1; overflow: hidden;">
+        <!-- Left column -->
+        <div style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
+          <div class="db-table">
+            <div class="db-table-header">Role</div>
+            <div class="db-table-body">
+              <div class="db-field"><span class="db-field-pk">PK</span> id</div>
+              <div class="db-field">name</div>
+              <div class="db-field">permissions</div>
+            </div>
+          </div>
+          <div class="db-table">
+            <div class="db-table-header">Department</div>
+            <div class="db-table-body">
+              <div class="db-field"><span class="db-field-pk">PK</span> id</div>
+              <div class="db-field">name</div>
+              <div class="db-field">code</div>
+            </div>
+          </div>
+          <div class="db-table">
+            <div class="db-table-header">Course</div>
+            <div class="db-table-body">
+              <div class="db-field"><span class="db-field-pk">PK</span> id</div>
+              <div class="db-field">name</div>
+              <div class="db-field"><span class="db-field-fk">FK</span> department_id</div>
+              <div class="db-field">description</div>
+            </div>
+          </div>
+        </div>
+        <!-- Center column -->
+        <div style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
+          <div class="db-table">
+            <div class="db-table-header">User</div>
+            <div class="db-table-body">
+              <div class="db-field"><span class="db-field-pk">PK</span> id</div>
+              <div class="db-field">email</div>
+              <div class="db-field">password_hash</div>
+              <div class="db-field">first_name</div>
+              <div class="db-field">last_name</div>
+              <div class="db-field"><span class="db-field-fk">FK</span> role_id</div>
+              <div class="db-field"><span class="db-field-fk">FK</span> department_id</div>
+            </div>
+          </div>
+          <div class="db-table">
+            <div class="db-table-header">Schedule</div>
+            <div class="db-table-body">
+              <div class="db-field"><span class="db-field-pk">PK</span> id</div>
+              <div class="db-field"><span class="db-field-fk">FK</span> course_id</div>
+              <div class="db-field">date, time, room</div>
+            </div>
+          </div>
+        </div>
+        <!-- Right column -->
+        <div style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
+          <div class="db-table">
+            <div class="db-table-header">Group</div>
+            <div class="db-table-body">
+              <div class="db-field"><span class="db-field-pk">PK</span> id</div>
+              <div class="db-field">name</div>
+              <div class="db-field"><span class="db-field-fk">FK</span> course_id</div>
+              <div class="db-field">year</div>
+            </div>
+          </div>
+          <div class="db-table">
+            <div class="db-table-header">Material</div>
+            <div class="db-table-body">
+              <div class="db-field"><span class="db-field-pk">PK</span> id</div>
+              <div class="db-field">title, file_path</div>
+              <div class="db-field"><span class="db-field-fk">FK</span> user_id</div>
+              <div class="db-field"><span class="db-field-fk">FK</span> course_id</div>
+            </div>
+          </div>
+          <div class="db-table">
+            <div class="db-table-header">News</div>
+            <div class="db-table-body">
+              <div class="db-field"><span class="db-field-pk">PK</span> id</div>
+              <div class="db-field">title, content</div>
+              <div class="db-field"><span class="db-field-fk">FK</span> author_id</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 7: Security -->
+    <div class="slide" data-slide="7">
+      <span class="section-label">Безопасность</span>
+      <h2>Механизмы безопасности</h2>
+      <div class="three-col" style="margin-bottom: 30px;">
+        <div class="card">
+          <h3 style="color: var(--accent);">Аутентификация</h3>
+          <p>JWT-токены с refresh rotation. Хеширование паролей алгоритмом bcryptjs.</p>
+        </div>
+        <div class="card">
+          <h3 style="color: var(--accent);">Авторизация</h3>
+          <p>RBAC с ролями и middleware-проверками. Защита маршрутов на уровне API.</p>
+        </div>
+        <div class="card">
+          <h3 style="color: var(--accent);">Защита</h3>
+          <p>Helmet для HTTP-заголовков. Rate-limiting. CORS. Валидация входных данных.</p>
+        </div>
+      </div>
+      <div class="four-col">
+        <div class="stat-card">
+          <div class="stat-value">JWT</div>
+          <div class="stat-label">Access + Refresh</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">bcrypt</div>
+          <div class="stat-label">Хеширование</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">RBAC</div>
+          <div class="stat-label">4 роли</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">100</div>
+          <div class="stat-label">req/min limit</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 8: User Roles -->
+    <div class="slide" data-slide="8">
+      <span class="section-label">Пользователи</span>
+      <h2>Роли и функционал</h2>
+      <table class="data-table" style="flex: 1;">
+        <thead>
+          <tr>
+            <th style="width: 160px;">Роль</th>
+            <th>Функционал</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight: bold; color: var(--accent);">Студент</td>
+            <td>Просмотр расписания, доступ к учебным материалам, просмотр новостей, личный кабинет</td>
+          </tr>
+          <tr>
+            <td style="font-weight: bold; color: var(--accent);">Преподаватель</td>
+            <td>Управление материалами курсов, создание объявлений, редактирование курсов, просмотр статистики</td>
+          </tr>
+          <tr>
+            <td style="font-weight: bold; color: var(--accent);">Методист</td>
+            <td>Модерирование контента, управление кафедрами, контроль качества учебных материалов</td>
+          </tr>
+          <tr>
+            <td style="font-weight: bold; color: var(--accent);">Администратор</td>
+            <td>Полный доступ: управление пользователями, ролями, системными настройками, просмотр логов</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Slide 9: Demo -->
+    <div class="slide" data-slide="9">
+      <span class="section-label">Демонстрация</span>
+      <h2>Демонстрация работы системы</h2>
+      <div class="two-col" style="flex: 1; align-items: center;">
+        <div class="screenshot-frame" style="height: 100%;">
+          <div class="screenshot-header">
+            <span class="screenshot-dot"></span>
+            <span class="screenshot-dot"></span>
+            <span class="screenshot-dot"></span>
+          </div>
+          <img src="figures/01_login.png" alt="Авторизация" style="width:100%; height:100%; object-fit:cover; border-radius:4px;">
+        </div>
+        <div>
+          <h3 style="margin-bottom: 20px;">Ключевые возможности</h3>
+          <ul class="bullet-list">
+            <li>Интуитивный интерфейс для всех ролей пользователей</li>
+            <li>Централизованное хранение учебных материалов</li>
+            <li>Оперативное обновление расписания</li>
+            <li>Система уведомлений и объявлений</li>
+            <li>Администрирование и мониторинг</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 10: Dashboard -->
+    <div class="slide" data-slide="10">
+      <span class="section-label">Интерфейс</span>
+      <h2>Панель управления (Dashboard)</h2>
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px;">
+        <img src="figures/02_dashboard.png" alt="Dashboard" style="max-width: 75%; max-height: 75%; object-fit: contain; border-radius: 6px; border: 1px solid var(--border);">
+      </div>
+      <p style="text-align: center; font-size: 18px;">Централизованная панель со статистикой, быстрыми ссылками и уведомлениями</p>
+    </div>
+
+    <!-- Slide 11: Schedule -->
+    <div class="slide" data-slide="11">
+      <span class="section-label">Интерфейс</span>
+      <h2>Расписание занятий</h2>
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px;">
+        <img src="figures/03_schedule.png" alt="Расписание" style="max-width: 75%; max-height: 75%; object-fit: contain; border-radius: 6px; border: 1px solid var(--border);">
+      </div>
+      <p style="text-align: center; font-size: 18px;">Фильтрация по группам, датам и аудиториям</p>
+    </div>
+
+    <!-- Slide 12: Materials -->
+    <div class="slide" data-slide="12">
+      <span class="section-label">Интерфейс</span>
+      <h2>Учебные материалы</h2>
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px;">
+        <img src="figures/04_materials.png" alt="Материалы" style="max-width: 75%; max-height: 75%; object-fit: contain; border-radius: 6px; border: 1px solid var(--border);">
+      </div>
+      <p style="text-align: center; font-size: 18px;">Каталог с поиском и категоризацией по дисциплинам</p>
+    </div>
+
+    <!-- Slide 13: News -->
+    <div class="slide" data-slide="13">
+      <span class="section-label">Интерфейс</span>
+      <h2>Новости и объявления</h2>
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px;">
+        <img src="figures/06_news.png" alt="Новости" style="max-width: 75%; max-height: 75%; object-fit: contain; border-radius: 6px; border: 1px solid var(--border);">
+      </div>
+      <p style="text-align: center; font-size: 18px;">Лента объявлений с возможностью модерирования</p>
+    </div>
+
+    <!-- Slide 14: Conclusion -->
+    <div class="slide slide-conclusion" data-slide="14">
+      <h1 style="font-size: 52px;">Спасибо за внимание</h1>
+    </div>
+
+  </div>
+
+  <div class="slide-counter" id="counter">1 / 14</div>
+  <div class="nav-hint">&larr; &rarr; или пробел</div>
+
+  <script>
+    let current = 1;
+    const total = 14;
+    const deck = document.getElementById('deck');
+    const slides = deck.querySelectorAll('.slide');
+    const progress = document.getElementById('progress');
+    const counter = document.getElementById('counter');
+
+    function update() {
+      slides.forEach((s, i) => {
+        s.classList.toggle('active', i + 1 === current);
+      });
+      progress.style.width = ((current / total) * 100) + '%';
+      counter.textContent = current + ' / ' + total;
+      localStorage.setItem('slide', current);
+    }
+
+    function navigate(dir) {
+      current = Math.max(1, Math.min(total, current + dir));
+      update();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); navigate(1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
+    });
+
+    // Click navigation
+    deck.addEventListener('click', (e) => {
+      const rect = deck.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      navigate(x > rect.width / 2 ? 1 : -1);
+    });
+
+    // Scale to fit
+    function scale() {
+      const vw = window.innerWidth / 1920;
+      const vh = window.innerHeight / 1080;
+      deck.style.transform = 'scale(' + Math.min(vw, vh) + ')';
+      deck.style.marginLeft = ((window.innerWidth - 1920 * Math.min(vw, vh)) / 2) + 'px';
+      deck.style.marginTop = ((window.innerHeight - 1080 * Math.min(vw, vh)) / 2) + 'px';
+    }
+
+    window.addEventListener('resize', scale);
+    scale();
+
+    // Restore position
+    const saved = localStorage.getItem('slide');
+    if (saved) { current = parseInt(saved); update(); }
+  </script>
+</body>
+</html>
