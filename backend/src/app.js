@@ -74,6 +74,21 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// =========================================================
+// Frontend (SPA) — раздача собранной статики из public/
+// =========================================================
+const publicPath = path.join(__dirname, '../public');
+const fs = require('fs');
+if (fs.existsSync(publicPath)) {
+  // Статические файлы (JS, CSS, изображения из /assets)
+  app.use(express.static(publicPath));
+
+  // SPA fallback — все не-API пути отдают index.html
+  app.get(/^\/(?!api|uploads).*/, (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
+}
+
 // Обработка 404
 app.use(notFoundHandler);
 

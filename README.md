@@ -1,192 +1,170 @@
 # Faculty Information System
 
-Система управления учебным процессом (дипломный проект).
+Информационная система Института точных наук и цифровых технологий (дипломный проект).
+
+## Архитектура
+
+Единый Node.js-сервер, отдаёт и API, и SPA-фронтенд:
+
+```
+Один Docker-контейнер
+└── Node.js (Express)
+    ├── /api/*     → REST API (Sequelize + PostgreSQL)
+    ├── /uploads/* → статика загруженных файлов
+    ├── /assets/*  → собранный frontend (JS, CSS, images)
+    └── /*         → SPA fallback → index.html
+
+Внешние сервисы:
+└── TimeWeb Managed PostgreSQL — данные
+```
 
 ## Структура проекта
 
 ```
-├── backend/              # Node.js + Express + PostgreSQL
+├── backend/              # Node.js + Express + Sequelize
 │   ├── src/
-│   │   ├── app.js       # Главный файл приложения
-│   │   ├── config/      # Конфигурация (database, app, auth)
-│   │   ├── controllers/ # Контроллеры (auth, user, content, stats)
-│   │   ├── middleware/  # Middleware (auth, role, error handling)
-│   │   ├── models/      # Sequelize модели
-│   │   ├── routes/      # Express роутеры
-│   │   ├── seeders/     # Сидеры для заполнения БД
-│   │   ├── services/    # Сервисы (tokenService)
-│   │   └── utils/       # Утилиты (logger)
-│   ├── .env.example     # Пример переменных окружения
-│   └── Dockerfile
-├── frontend/            # React + Vite + MUI
-│   ├── src/
-│   │   ├── api/         # Axios instance
-│   │   ├── components/  # Компоненты (Layout, PrivateRoute, PublicRoute)
-│   │   ├── pages/       # Страницы
-│   │   ├── redux/       # Redux slices
-│   │   └── styles/      # Глобальные стили
-│   ├── .env.production  # Переменные для production
-│   ├── nginx.conf       # Конфигурация Nginx
-│   └── Dockerfile
-├── docker-compose.yml   # Локальная разработка
+│   │   ├── app.js        # Express + SPA fallback
+│   │   ├── config/       # конфигурация (DB, auth, app)
+│   │   ├── controllers/  # auth, user, content, stats
+│   │   ├── middleware/   # auth, role, error handler
+│   │   ├── models/       # Sequelize модели
+│   │   ├── routes/       # Express роутеры
+│   │   ├── seeders/      # сидеры (8 пользователей, расписание, курсы…)
+│   │   └── utils/        # logger
+│   ├── .env.example
+│   └── package.json
+├── frontend/             # React + Vite + MUI
+│   ├── src/              # исходники
+│   └── package.json
+├── Dockerfile             # multi-stage: backend deps + frontend build → runtime
+├── docker-compose.yml     # один сервис (app)
 ├── .dockerignore
+├── .env.example          # шаблон env для локального запуска
+├── .env.production       # ТОЛЬКО VITE_API_URL (для билда)
 └── README.md
 ```
 
-## Запуск локально
+## Локальный запуск (docker-compose)
 
-### 1. Backend + PostgreSQL
-
-```bash
-# Поднять PostgreSQL
-docker-compose up -d db
-
-# Установить зависимости
-cd backend && npm install
-
-# Запустить
-npm run dev
-```
-
-### 2. Frontend (dev)
-
-```bash
-cd frontend && npm install
-npm run dev
-```
-
-### 3. Docker (всё вместе)
-
-```bash
-docker compose up --build
-```
-
-- Frontend: http://localhost:3080
-- Backend API: http://localhost:5001/api
-- PostgreSQL: localhost:5433
-
-**Тестовые аккаунты:**
-- admin@faculty.ru / Admin123! (администратор)
-- ivanov@faculty.ru / Teacher123! (преподаватель)
-- petrov@student.ru / Student123! (студент)
-
-## Деплой на TimeWeb Cloud
-
-### 1. Создать Managed PostgreSQL
-
-В панели TimeWeb Cloud создайте Managed Database PostgreSQL.
-
-### 2. Backend (App Platform)
-
-1. Подключите репозиторий к TimeWeb Cloud App Platform
-2. Укажите корень проекта: `backend/`
-3. Тип: **Docker**
-4. Переменные окружения:
+1. Скопируй `.env.example` в `.env` и заполни:
+   ```bash
+   cp .env.example .env
    ```
-   NODE_ENV=production
-   PORT=5001
-   DB_HOST=<хост из Managed PostgreSQL>
-   DB_PORT=5432
-   DB_NAME=faculty_db
-   DB_USER=<пользователь>
-   DB_PASSWORD=<пароль>
-   JWT_ACCESS_SECRET=<случайная строка 32+ символов>
-   JWT_REFRESH_SECRET=<случайная строка 32+ символов>
-   CLIENT_URL=<домен вашего фронтенда>
+2. Подними:
+   ```bash
+   docker compose up --build
+   ```
+3. Открой:
+   - **App**: http://localhost:3000
+
+**Тестовые аккаунты (создаются автоматически):**
+- `admin@faculty.ru` / `Admin123!` — администратор
+- `ivanov@faculty.ru` / `Teacher123!` — преподаватель
+- `petrov@student.ru` / `Student123!` — студент
+
+## Деплой на TimeWeb App Platform
+
+### Подготовка
+
+1. **Managed PostgreSQL** в TimeWeb Cloud → создать, скопировать хост/порт/логин/пароль/имя_бд
+2. **Сгенерировать JWT секреты:**
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    ```
 
-### 3. Frontend (App Platform)
+### Создание приложения
 
-1. Подключите репозиторий к TimeWeb Cloud App Platform
-2. Укажите корень проекта: `frontend/`
-3. Тип: **Статика**
-4. Команда сборки: `npm run build`
-5. Публичная директория: `dist`
-6. Build аргументы:
-   ```
-   VITE_API_URL=/api
-   ```
+1. App Platform → **Создать приложение** → подключить репозиторий
+2. Framework: **Node.js**, корень: `.` (корень репо)
+3. Команда сборки: оставить пустой (Dockerfile всё делает)
+4. Порт: `3000`
 
-### 4. Домен
+### Переменные окружения (в интерфейсе App Platform)
 
-TimeWeb предоставит технический домен с SSL. Привяжите его к frontend.
+| Переменная | Пример | Описание |
+|------------|--------|----------|
+| `NODE_ENV` | `production` | |
+| `PORT` | `3000` | TimeWeb проксирует домен на этот порт |
+| `DB_HOST` | `04cf0e8e85f31549a679c3eb.twc1.net` | из Managed PostgreSQL |
+| `DB_PORT` | `5432` | |
+| `DB_NAME` | `default_db` | |
+| `DB_USER` | `gen_user` | |
+| `DB_PASSWORD` | `...` | |
+| `JWT_ACCESS_SECRET` | `<64 hex>` | новый, не из репо |
+| `JWT_REFRESH_SECRET` | `<64 hex>` | новый, не из репо |
+| `JWT_ACCESS_EXPIRES` | `15m` | опционально |
+| `JWT_REFRESH_EXPIRES` | `30d` | опционально |
+| `CLIENT_URL` | `*` | `*` для всех origins (или конкретный домен) |
 
-## Переменные окружения
+**Build args (если поддерживается):**
+| Аргумент | Значение |
+|----------|----------|
+| `VITE_API_URL` | `/api` |
 
-### Backend (.env)
+### Что делает App Platform автоматически
 
-```env
-NODE_ENV=production
-PORT=5001
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=faculty_db
-DB_USER=postgres
-DB_PASSWORD=your_secure_password
+- Подтягивает код из GitLab
+- Собирает образ по `Dockerfile` (3 стадии: backend deps, frontend build, runtime)
+- Запускает контейнер с Node.js на PORT=3000
+- Настраивает **Nginx** перед приложением (проксирует домен → 3000)
+- Выпускает **SSL-сертификат Let's Encrypt**
+- Подключает технический домен `*.tw1.ru`
 
-JWT_ACCESS_SECRET=your_access_secret_min_32_chars
-JWT_REFRESH_SECRET=your_refresh_secret_min_32_chars
-JWT_ACCESS_EXPIRES=15m
-JWT_REFRESH_EXPIRES=30d
+### Деплой
 
-CLIENT_URL=https://your-domain.tw1.ru
-```
-
-### Frontend (.env.production)
-
-```env
-VITE_API_URL=/api
-```
+- Push в `main` → автодеплой (если включён)
+- Или кнопка **Redeploy** в интерфейсе
+- Логи и health-check доступны в панели
 
 ## API Endpoints
 
-### Аутентификация
-- `POST /api/auth/register` — Регистрация
-- `POST /api/auth/login` — Вход
-- `POST /api/auth/logout` — Выход
-- `POST /api/auth/refresh` — Обновление токенов
-- `GET /api/auth/me` — Текущий пользователь
-- `POST /api/auth/change-password` — Смена пароля
+### Аутентификация (публичные)
+- `POST /api/auth/register` — регистрация (только role=student)
+- `POST /api/auth/login` — вход
+- `POST /api/auth/refresh` — обновление токенов
+
+### Аутентификация (приватные)
+- `GET  /api/auth/me` — текущий пользователь
+- `POST /api/auth/logout` — выход
+- `POST /api/auth/change-password` — смена пароля
 
 ### Контент (публичные)
-- `GET /api/news` — Новости (пагинация, фильтр по category/published)
-- `GET /api/courses` — Курсы
-- `GET /api/materials` — Материалы
-- `GET /api/schedule` — Расписание
-- `GET /api/departments` — Кафедры
-- `GET /api/groups` — Группы
-- `GET /api/teachers` — Преподаватели
+- `GET /api/news?published=true` — новости
+- `GET /api/courses` — курсы
+- `GET /api/materials` — материалы
+- `GET /api/schedule` — расписание
+- `GET /api/departments` — кафедры
+- `GET /api/groups` — группы
+- `GET /api/teachers` — преподаватели
 
-### Контент (только админ)
-- `POST /api/news` — Создать новость
-- `PUT /api/news/:id` — Обновить
-- `DELETE /api/news/:id` — Удалить
-- `POST /api/courses` — Создать курс
-- `PUT /api/courses/:id` — Обновить
-- `DELETE /api/courses/:id` — Удалить
-- `DELETE /api/materials/:id` — Удалить материал
-- `POST /api/schedule` — Создать занятие
-- `PUT /api/schedule/:id` — Обновить
-- `DELETE /api/schedule/:id` — Удалить
+### Контент (только admin)
+- `POST/PUT/DELETE /api/news` — управление новостями
+- `POST/PUT/DELETE /api/courses` — управление курсами
+- `DELETE /api/materials/:id` — удаление материалов
+- `POST/PUT/DELETE /api/schedule` — управление расписанием
 
 ### Пользователи
-- `GET /api/users` — Все пользователи (admin)
-- `POST /api/users` — Создать пользователя (admin)
-- `PUT /api/users/:id` — Обновить (admin)
-- `DELETE /api/users/:id` — Удалить (admin)
-- `PATCH /api/users/:id/toggle-block` — Заблокировать/разблокировать (admin)
-- `GET /api/users/roles` — Список ролей
-- `PUT /api/users/profile` — Обновить свой профиль
+- `GET /api/users` — все пользователи (admin)
+- `POST /api/users` — создать пользователя (admin)
+- `PUT /api/users/:id` — обновить (admin)
+- `DELETE /api/users/:id` — удалить (admin)
+- `PATCH /api/users/:id/toggle-block` — заблокировать (admin)
+- `GET /api/users/roles` — список ролей
+- `PUT /api/users/profile` — обновить свой профиль
 
 ### Статистика
-- `GET /api/stats` — Статистика (admin)
+- `GET /api/stats` — счётчики (admin)
 
-## Роли и права
+### Health
+- `GET /api/health` — `{"status":"ok",...}`
 
-| Роль | Доступ |
-|------|--------|
-| admin | Полный доступ |
-| teacher | Управление материалами и расписанием |
-| methodist | Управление учебными программами |
-| student | Просмотр материалов и расписания |
-| applicant | Просмотр информации об институте |
+## Роли
+
+| Код | Доступ |
+|-----|--------|
+| `admin` | Полный доступ ко всему |
+| `teacher` | Управление материалами и расписанием |
+| `methodist` | Управление учебными программами |
+| `student` | Просмотр материалов и расписания |
+| `applicant` | Просмотр информации об институте |
