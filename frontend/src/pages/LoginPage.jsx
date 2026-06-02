@@ -145,13 +145,20 @@ function LoginPage() {
                 {isLoading ? 'Вход...' : 'Войти'}
               </Button>
 
-              <Box sx={{ textAlign: 'center' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                <Link
+                  component={RouterLink}
+                  to="/forgot-password"
+                  variant="body2"
+                >
+                  Забыли пароль?
+                </Link>
                 <Link
                   component={RouterLink}
                   to="/register"
                   variant="body2"
                 >
-                  Нет учётной записи? Зарегистрироваться
+                  Зарегистрироваться
                 </Link>
               </Box>
             </Box>

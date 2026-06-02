@@ -5,8 +5,10 @@
 
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
-const { User, Role } = require('../models');
+const crypto = require('crypto');
+const { User, Role, PasswordResetToken } = require('../models');
 const tokenService = require('../services/tokenService');
+const emailService = require('../services/emailService');
 const authConfig = require('../config/auth');
 const logger = require('../utils/logger');
 const { ApiError } = require('../middleware/errorHandler');
@@ -59,6 +61,13 @@ exports.register = async (req, res, next) => {
     });
 
     logger.info(`Зарегистрирован новый пользователь: ${email}`);
+
+    // Отправка welcome email (не критично, если SMTP не настроен)
+    emailService.sendWelcome({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    }).catch((err) => logger.warn(`Не удалось отправить welcome email: ${err.message}`));
 
     const role = await Role.findByPk(userRoleId);
 
@@ -321,6 +330,105 @@ exports.changePassword = async (req, res, next) => {
 
     res.json({
       message: 'Пароль успешно изменён. Необходимо войти снова.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Запрос на восстановление пароля
+ * @route POST /api/auth/forgot-password
+ */
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибка валидации', errors.array()));
+    }
+
+    const { email } = req.body;
+
+    // Всегда возвращаем одинаковый ответ (не раскрываем существование email)
+    const successResponse = {
+      message: 'Если email зарегистрирован, на него отправлена инструкция по восстановлению пароля.',
+    };
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.json(successResponse);
+    }
+
+    // Генерируем токен
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 час
+
+    await PasswordResetToken.create({
+      token,
+      userId: user.id,
+      expiresAt,
+    });
+
+    // Отправляем email (не критично если SMTP не настроен)
+    const clientUrl = process.env.CLIENT_URL === '*'
+      ? 'http://localhost:3000'
+      : (process.env.CLIENT_URL || 'http://localhost:3000').split(',')[0].trim();
+    const resetUrl = `${clientUrl}/reset-password?token=${token}`;
+
+    emailService.sendPasswordReset({
+      email: user.email,
+      firstName: user.firstName,
+      resetUrl,
+    }).catch((err) => logger.warn(`Не удалось отправить email восстановления: ${err.message}`));
+
+    logger.info(`Запрошено восстановление пароля для: ${email}`);
+    res.json(successResponse);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Сброс пароля по токену
+ * @route POST /api/auth/reset-password
+ */
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибка валидации', errors.array()));
+    }
+
+    const { token, newPassword } = req.body;
+
+    const resetToken = await PasswordResetToken.findOne({
+      where: { token },
+    });
+
+    if (!resetToken || !resetToken.isValid()) {
+      return next(ApiError.badRequest('Недействительный или просроченный токен'));
+    }
+
+    const user = await User.findByPk(resetToken.userId);
+    if (!user || !user.isActive) {
+      return next(ApiError.badRequest('Пользователь не найден или деактивирован'));
+    }
+
+    // Меняем пароль
+    user.password = newPassword;
+    await user.save();
+
+    // Помечаем токен использованным
+    resetToken.isUsed = true;
+    await resetToken.save();
+
+    // Отзываем все refresh токены
+    await tokenService.revokeAllUserTokens(user.id);
+
+    logger.info(`Пароль сброшен через email для: ${user.email}`);
+
+    res.json({
+      message: 'Пароль успешно изменён. Теперь вы можете войти с новым паролем.',
     });
   } catch (error) {
     next(error);

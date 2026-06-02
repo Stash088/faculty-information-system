@@ -15,6 +15,7 @@ const News = require('./News');
 const Group = require('./Group');
 const Department = require('./Department');
 const RefreshToken = require('./RefreshToken');
+const PasswordResetToken = require('./PasswordResetToken');
 
 // Role -> Users (one-to-many)
 Role.hasMany(User, {
@@ -146,6 +147,16 @@ RefreshToken.belongsTo(User, {
   as: 'user',
 });
 
+// User -> PasswordResetTokens (one-to-many)
+User.hasMany(PasswordResetToken, {
+  foreignKey: 'userId',
+  as: 'passwordResetTokens',
+});
+PasswordResetToken.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user',
+});
+
 const syncModels = async () => {
   try {
     await sequelize.sync({ alter: true });
@@ -167,5 +178,6 @@ module.exports = {
   Group,
   Department,
   RefreshToken,
+  PasswordResetToken,
   syncModels,
 };
