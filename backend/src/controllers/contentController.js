@@ -113,7 +113,18 @@ exports.deleteNews = async (req, res, next) => {
 
 exports.getCourses = async (req, res, next) => {
   try {
+    const { departmentId, teacherId, semester, search } = req.query;
+    const where = {};
+    if (departmentId) where.departmentId = parseInt(departmentId, 10);
+    if (teacherId) where.teacherId = parseInt(teacherId, 10);
+    if (semester) where.semester = parseInt(semester, 10);
+    if (search) {
+      const { Op } = require('sequelize');
+      where.name = { [Op.iLike]: `%${search}%` };
+    }
+
     const courses = await Course.findAll({
+      where,
       include: [
         { model: User, as: 'courseTeacher', attributes: ['id', 'firstName', 'lastName'] },
         { model: Department, as: 'department', attributes: ['id', 'name'] },
@@ -181,7 +192,19 @@ exports.deleteCourse = async (req, res, next) => {
 
 exports.getMaterials = async (req, res, next) => {
   try {
+    const { courseId, type, teacherId, published, search } = req.query;
+    const where = {};
+    if (courseId) where.courseId = parseInt(courseId, 10);
+    if (type) where.type = type;
+    if (teacherId) where.teacherId = parseInt(teacherId, 10);
+    if (published !== undefined) where.isPublished = published === 'true';
+    if (search) {
+      const { Op } = require('sequelize');
+      where.title = { [Op.iLike]: `%${search}%` };
+    }
+
     const materials = await Material.findAll({
+      where,
       include: [
         { model: User, as: 'teacher', attributes: ['id', 'firstName', 'lastName'] },
         { model: Course, as: 'course', attributes: ['id', 'name'] },
@@ -212,7 +235,15 @@ exports.deleteMaterial = async (req, res, next) => {
 
 exports.getSchedule = async (req, res, next) => {
   try {
+    const { groupId, teacherId, dayOfWeek, courseId } = req.query;
+    const where = {};
+    if (groupId) where.groupId = parseInt(groupId, 10);
+    if (teacherId) where.teacherId = parseInt(teacherId, 10);
+    if (dayOfWeek) where.dayOfWeek = parseInt(dayOfWeek, 10);
+    if (courseId) where.courseId = parseInt(courseId, 10);
+
     const schedule = await Schedule.findAll({
+      where,
       include: [
         { model: Course, as: 'course', attributes: ['id', 'name'] },
         { model: User, as: 'teacher', attributes: ['id', 'firstName', 'lastName'] },
