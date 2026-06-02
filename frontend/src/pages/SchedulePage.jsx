@@ -26,7 +26,7 @@ import {
   Alert,
   Chip,
 } from '@mui/material';
-import { Add, Edit, Delete } from '@mui/icons-material';
+import { Add, Edit, Delete, Event } from '@mui/icons-material';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import api from '../api/axios';
@@ -255,6 +255,18 @@ function SchedulePage() {
               ))}
             </Select>
           </FormControl>
+          <Button
+            variant="outlined"
+            startIcon={<Event />}
+            onClick={() => {
+              const url = selectedGroupId
+                ? `/api/schedule/ical?groupId=${selectedGroupId}`
+                : '/api/schedule/ical';
+              window.location.href = url;
+            }}
+          >
+            Экспорт в календарь
+          </Button>
           {isAdmin && (
             <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
               Добавить занятие

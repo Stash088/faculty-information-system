@@ -27,6 +27,7 @@ router.delete('/materials/:id', authenticate, requireAdmin, contentController.de
 
 // Schedule (CRUD)
 router.get('/schedule', contentController.getSchedule);
+router.get('/schedule/ical', contentController.getScheduleIcal);
 router.post('/schedule', authenticate, requireAdmin, contentController.createSchedule);
 router.put('/schedule/:id', authenticate, requireAdmin, contentController.updateSchedule);
 router.delete('/schedule/:id', authenticate, requireAdmin, contentController.deleteSchedule);

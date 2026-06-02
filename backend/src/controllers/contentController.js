@@ -225,6 +225,137 @@ exports.getSchedule = async (req, res, next) => {
   }
 };
 
+// ============ iCal EXPORT (ФТ-С2) ============
+
+/**
+ * Генерация iCalendar (RFC 5545) для экспорта расписания в Google Calendar / Apple Calendar
+ * @route GET /api/schedule/ical
+ */
+exports.getScheduleIcal = async (req, res, next) => {
+  try {
+    const { groupId, teacherId, startDate, endDate } = req.query;
+
+    const where = {};
+    if (groupId) where.groupId = parseInt(groupId, 10);
+    if (teacherId) where.teacherId = parseInt(teacherId, 10);
+
+    const schedule = await Schedule.findAll({
+      where,
+      include: [
+        { model: Course, as: 'course', attributes: ['id', 'name'] },
+        { model: User, as: 'teacher', attributes: ['id', 'firstName', 'lastName'] },
+        { model: Group, as: 'group', attributes: ['id', 'name'] },
+      ],
+      order: [['day_of_week', 'ASC'], ['lesson_number', 'ASC']],
+    });
+
+    // Диапазон дат (по умолчанию — текущий семестр)
+    const dtStart = startDate || '2026-02-01';
+    const dtEnd = endDate || '2026-05-31';
+
+    // Время пар по умолчанию (если не задано)
+    const defaultTimes = {
+      1: ['09:00', '10:30'],
+      2: ['10:45', '12:15'],
+      3: ['12:30', '14:00'],
+      4: ['14:15', '15:45'],
+      5: ['16:00', '17:30'],
+      6: ['17:40', '19:10'],
+      7: ['19:20', '20:50'],
+      8: ['20:55', '22:25'],
+    };
+
+    const formatIcalTime = (date, timeStr) => {
+      // timeStr = "09:00:00" или "09:00"
+      const [h, m] = timeStr.split(':');
+      const d = new Date(date);
+      d.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+      return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    };
+
+    // Формируем дату для каждого дня недели в диапазоне
+    const events = [];
+    const startDateObj = new Date(dtStart);
+    const endDateObj = new Date(dtEnd);
+
+    for (const item of schedule) {
+      const dayOffset = item.dayOfWeek - 1; // 1=Пн → 0
+      const [startTime, endTime] = defaultTimes[item.lessonNumber] || [
+        item.startTime || '09:00',
+        item.endTime || '10:30',
+      ];
+
+      // Проходим по всем неделям в диапазоне
+      const current = new Date(startDateObj);
+      while (current <= endDateObj) {
+        // current.getDay() = 0 (Вс) - 6 (Сб); нужно 1 (Пн) - 7 (Вс)
+        const currentDay = current.getDay() === 0 ? 7 : current.getDay();
+        if (currentDay === item.dayOfWeek) {
+          const eventDate = new Date(current);
+          const startDateTime = formatIcalTime(eventDate, startTime);
+          const endDateTime = formatIcalTime(eventDate, endTime);
+
+          const teacherName = item.teacher
+            ? `${item.teacher.lastName} ${item.teacher.firstName}`
+            : '';
+          const groupName = item.group?.name || '';
+          const room = item.room || '';
+          const building = item.building ? `, ${item.building}` : '';
+          const location = room ? `${room}${building}` : '';
+
+          events.push({
+            uid: `schedule-${item.id}-${eventDate.toISOString().split('T')[0]}@faculty-app`,
+            start: startDateTime,
+            end: endDateTime,
+            summary: item.course?.name || 'Занятие',
+            description: [
+              `Преподаватель: ${teacherName}`,
+              `Группа: ${groupName}`,
+              `Тип: ${item.lessonType || 'lecture'}`,
+              item.notes || '',
+            ].filter(Boolean).join('\\n'),
+            location,
+          });
+        }
+        current.setDate(current.getDate() + 1);
+      }
+    }
+
+    // Формируем iCal
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Faculty Information System//Schedule//RU',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      `X-WR-CALNAME:Расписание ИТНиЦТ${groupId ? ` (группа ${groupId})` : ''}`,
+    ];
+
+    for (const ev of events) {
+      const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      lines.push('BEGIN:VEVENT');
+      lines.push(`UID:${ev.uid}`);
+      lines.push(`DTSTAMP:${now}`);
+      lines.push(`DTSTART:${ev.start}`);
+      lines.push(`DTEND:${ev.end}`);
+      lines.push(`SUMMARY:${ev.summary}`);
+      if (ev.location) lines.push(`LOCATION:${ev.location}`);
+      if (ev.description) lines.push(`DESCRIPTION:${ev.description}`);
+      lines.push('END:VEVENT');
+    }
+
+    lines.push('END:VCALENDAR');
+
+    const icalContent = lines.join('\r\n');
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="schedule-${groupId || 'all'}.ics"`);
+    res.send(icalContent);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ============ SCHEDULE CRUD ============
 
 exports.createSchedule = async (req, res, next) => {
