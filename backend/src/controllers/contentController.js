@@ -446,10 +446,75 @@ exports.deleteSchedule = async (req, res, next) => {
 exports.getDepartments = async (req, res, next) => {
   try {
     const departments = await Department.findAll({
-      attributes: ['id', 'name', 'shortName', 'code'],
       order: [['name', 'ASC']],
     });
     res.json({ data: departments });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.createDepartment = async (req, res, next) => {
+  try {
+    const { name, shortName, code, description, phone, email, address } = req.body;
+    if (!name) {
+      return next(ApiError.badRequest('Название обязательно'));
+    }
+    const department = await Department.create({
+      name, shortName, code, description, phone, email, address,
+      isActive: true,
+    });
+    res.status(201).json(department);
+  } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return next(ApiError.conflict('Кафедра с таким кодом уже существует'));
+    }
+    next(error);
+  }
+};
+
+exports.updateDepartment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const department = await Department.findByPk(id);
+    if (!department) {
+      return next(ApiError.notFound('Кафедра не найдена'));
+    }
+    const { name, shortName, code, description, phone, email, address, isActive } = req.body;
+    await department.update({
+      ...(name !== undefined && { name }),
+      ...(shortName !== undefined && { shortName }),
+      ...(code !== undefined && { code }),
+      ...(description !== undefined && { description }),
+      ...(phone !== undefined && { phone }),
+      ...(email !== undefined && { email }),
+      ...(address !== undefined && { address }),
+      ...(isActive !== undefined && { isActive: isActive === 'true' || isActive === true }),
+    });
+    res.json(department);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deleteDepartment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const department = await Department.findByPk(id);
+    if (!department) {
+      return next(ApiError.notFound('Кафедра не найдена'));
+    }
+    // Проверим есть ли связанные курсы/группы
+    const { Course, Group } = require('../models');
+    const coursesCount = await Course.count({ where: { departmentId: id } });
+    const groupsCount = await Group.count({ where: { departmentId: id } });
+    if (coursesCount > 0 || groupsCount > 0) {
+      return next(ApiError.badRequest(
+        `Невозможно удалить: кафедра используется (${coursesCount} курсов, ${groupsCount} групп)`,
+      ));
+    }
+    await department.destroy();
+    res.json({ message: 'Кафедра удалена' });
   } catch (error) {
     next(error);
   }
@@ -460,10 +525,76 @@ exports.getDepartments = async (req, res, next) => {
 exports.getGroups = async (req, res, next) => {
   try {
     const groups = await Group.findAll({
-      attributes: ['id', 'name', 'year', 'semester'],
+      include: [{ model: Department, as: 'department', attributes: ['id', 'name', 'shortName'] }],
       order: [['name', 'ASC']],
     });
     res.json({ data: groups });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.createGroup = async (req, res, next) => {
+  try {
+    const { name, course, year, semester, departmentId, studentCount, curatorId } = req.body;
+    if (!name || !course || !year || !semester || !departmentId) {
+      return next(ApiError.badRequest('Название, направление, год, семестр и кафедра обязательны'));
+    }
+    const group = await Group.create({
+      name, course,
+      year: parseInt(year, 10),
+      semester: parseInt(semester, 10),
+      departmentId: parseInt(departmentId, 10),
+      studentCount: studentCount || 0,
+      curatorId: curatorId || null,
+      isActive: true,
+    });
+    res.status(201).json(group);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateGroup = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const group = await Group.findByPk(id);
+    if (!group) {
+      return next(ApiError.notFound('Группа не найдена'));
+    }
+    const { name, course, year, semester, departmentId, studentCount, curatorId, isActive } = req.body;
+    await group.update({
+      ...(name !== undefined && { name }),
+      ...(course !== undefined && { course }),
+      ...(year !== undefined && { year: parseInt(year, 10) }),
+      ...(semester !== undefined && { semester: parseInt(semester, 10) }),
+      ...(departmentId !== undefined && { departmentId: parseInt(departmentId, 10) }),
+      ...(studentCount !== undefined && { studentCount: parseInt(studentCount, 10) }),
+      ...(curatorId !== undefined && { curatorId: curatorId || null }),
+      ...(isActive !== undefined && { isActive: isActive === 'true' || isActive === true }),
+    });
+    res.json(group);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deleteGroup = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const group = await Group.findByPk(id);
+    if (!group) {
+      return next(ApiError.notFound('Группа не найдена'));
+    }
+    const { Schedule } = require('../models');
+    const scheduleCount = await Schedule.count({ where: { groupId: id } });
+    if (scheduleCount > 0) {
+      return next(ApiError.badRequest(
+        `Невозможно удалить: группа используется в расписании (${scheduleCount} записей)`,
+      ));
+    }
+    await group.destroy();
+    res.json({ message: 'Группа удалена' });
   } catch (error) {
     next(error);
   }

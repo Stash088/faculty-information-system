@@ -34,9 +34,15 @@ router.delete('/schedule/:id', authenticate, requireAdmin, contentController.del
 
 // Departments
 router.get('/departments', contentController.getDepartments);
+router.post('/departments', authenticate, requireAdmin, contentController.createDepartment);
+router.put('/departments/:id', authenticate, requireAdmin, contentController.updateDepartment);
+router.delete('/departments/:id', authenticate, requireAdmin, contentController.deleteDepartment);
 
 // Groups
 router.get('/groups', contentController.getGroups);
+router.post('/groups', authenticate, requireAdmin, contentController.createGroup);
+router.put('/groups/:id', authenticate, requireAdmin, contentController.updateGroup);
+router.delete('/groups/:id', authenticate, requireAdmin, contentController.deleteGroup);
 
 // Teachers
 router.get('/teachers', contentController.getTeachers);

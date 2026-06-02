@@ -56,6 +56,7 @@ function AdminPage() {
   const [courses, setCourses] = useState([]);
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [roles, setRoles] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [formData, setFormData] = useState({});
@@ -92,6 +93,17 @@ function AdminPage() {
         setUsers(res.data.users || []);
         const rolesRes = await api.get('/users/roles');
         setRoles(rolesRes.data.roles || []);
+      } else if (activeTab === 'departments') {
+        const res = await api.get('/departments');
+        setDepartments(res.data.data || []);
+      } else if (activeTab === 'groups') {
+        const res = await api.get('/groups');
+        setGroups(res.data.data || []);
+        // Нужны кафедры для формы
+        if (departments.length === 0) {
+          const deptRes = await api.get('/departments');
+          setDepartments(deptRes.data.data || []);
+        }
       }
     } catch (err) {
       setError('Ошибка загрузки данных');
@@ -175,6 +187,26 @@ function AdminPage() {
         } else {
           await api.post('/users', formData);
         }
+      } else if (activeTab === 'departments') {
+        if (!formData.name) {
+          setError('Название обязательно');
+          return;
+        }
+        if (formData.id) {
+          await api.put(`/departments/${formData.id}`, formData);
+        } else {
+          await api.post('/departments', formData);
+        }
+      } else if (activeTab === 'groups') {
+        if (!formData.name || !formData.departmentId) {
+          setError('Название и кафедра обязательны');
+          return;
+        }
+        if (formData.id) {
+          await api.put(`/groups/${formData.id}`, formData);
+        } else {
+          await api.post('/groups', formData);
+        }
       }
       handleCloseDialog();
       fetchData();
@@ -187,16 +219,19 @@ function AdminPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('Удалить запись?')) return;
     try {
-      if (activeTab === 'news') {
-        await api.delete(`/news/${id}`);
-      } else if (activeTab === 'materials') {
-        await api.delete(`/materials/${id}`);
-      } else if (activeTab === 'courses') {
-        await api.delete(`/courses/${id}`);
-      } else if (activeTab === 'users') {
-        await api.delete(`/users/${id}`);
+      const endpoints = {
+        news: `/news/${id}`,
+        materials: `/materials/${id}`,
+        courses: `/courses/${id}`,
+        users: `/users/${id}`,
+        departments: `/departments/${id}`,
+        groups: `/groups/${id}`,
+      };
+      const url = endpoints[activeTab];
+      if (url) {
+        await api.delete(url);
+        fetchData();
       }
-      fetchData();
     } catch (err) {
       setError(err.response?.data?.message || 'Ошибка удаления');
       console.error(err);
@@ -217,6 +252,8 @@ function AdminPage() {
     { key: 'news', label: 'Новости' },
     { key: 'materials', label: 'Материалы' },
     { key: 'courses', label: 'Курсы' },
+    { key: 'departments', label: 'Кафедры' },
+    { key: 'groups', label: 'Группы' },
     { key: 'users', label: 'Пользователи' },
   ];
 
@@ -373,6 +410,78 @@ function AdminPage() {
                       <EditIcon />
                     </IconButton>
                     <IconButton onClick={() => handleDelete(item.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      {/* Departments Table */}
+      {activeTab === 'departments' && (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Название</TableCell>
+                <TableCell>Сокращение</TableCell>
+                <TableCell>Код</TableCell>
+                <TableCell>Действия</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {departments.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.id}</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>{item.shortName || '—'}</TableCell>
+                  <TableCell>{item.code || '—'}</TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleOpenDialog(item)} title="Редактировать">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(item.id)} color="error" title="Удалить">
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      {/* Groups Table */}
+      {activeTab === 'groups' && (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Название</TableCell>
+                <TableCell>Кафедра</TableCell>
+                <TableCell>Курс</TableCell>
+                <TableCell>Семестр</TableCell>
+                <TableCell>Действия</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {groups.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.id}</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>{item.department?.shortName || item.department?.name || '—'}</TableCell>
+                  <TableCell>{item.year || '—'}</TableCell>
+                  <TableCell>{item.semester || '—'}</TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleOpenDialog(item)} title="Редактировать">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(item.id)} color="error" title="Удалить">
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -634,6 +743,119 @@ function AdminPage() {
                 }
                 label="Опубликовано"
                 sx={{ mt: 2 }}
+              />
+            </>
+          )}
+          {activeTab === 'departments' && (
+            <>
+              <TextField
+                fullWidth
+                label="Полное название"
+                value={formData.name || ''}
+                onChange={(e) => handleChange('name', e.target.value)}
+                margin="normal"
+                required
+              />
+              <TextField
+                fullWidth
+                label="Сокращение"
+                value={formData.shortName || ''}
+                onChange={(e) => handleChange('shortName', e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Код (уникальный)"
+                value={formData.code || ''}
+                onChange={(e) => handleChange('code', e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Описание"
+                value={formData.description || ''}
+                onChange={(e) => handleChange('description', e.target.value)}
+                margin="normal"
+                multiline
+                rows={2}
+              />
+              <TextField
+                fullWidth
+                label="Телефон"
+                value={formData.phone || ''}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                value={formData.email || ''}
+                onChange={(e) => handleChange('email', e.target.value)}
+                margin="normal"
+              />
+            </>
+          )}
+          {activeTab === 'groups' && (
+            <>
+              <TextField
+                fullWidth
+                label="Название (например, ИВТ-101)"
+                value={formData.name || ''}
+                onChange={(e) => handleChange('name', e.target.value)}
+                margin="normal"
+                required
+              />
+              <TextField
+                fullWidth
+                label="Направление (например, ИВТ)"
+                value={formData.course || ''}
+                onChange={(e) => handleChange('course', e.target.value)}
+                margin="normal"
+                required
+              />
+              <FormControl fullWidth margin="normal" required>
+                <InputLabel>Кафедра</InputLabel>
+                <Select
+                  value={formData.departmentId || ''}
+                  onChange={(e) => handleChange('departmentId', e.target.value)}
+                  label="Кафедра"
+                >
+                  {departments.map((d) => (
+                    <MenuItem key={d.id} value={d.id}>
+                      {d.shortName || d.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Курс (1-6)"
+                type="number"
+                value={formData.year || ''}
+                onChange={(e) => handleChange('year', parseInt(e.target.value))}
+                margin="normal"
+                required
+                inputProps={{ min: 1, max: 6 }}
+              />
+              <TextField
+                fullWidth
+                label="Семестр (1-12)"
+                type="number"
+                value={formData.semester || ''}
+                onChange={(e) => handleChange('semester', parseInt(e.target.value))}
+                margin="normal"
+                required
+                inputProps={{ min: 1, max: 12 }}
+              />
+              <TextField
+                fullWidth
+                label="Кол-во студентов"
+                type="number"
+                value={formData.studentCount || 0}
+                onChange={(e) => handleChange('studentCount', parseInt(e.target.value))}
+                margin="normal"
+                inputProps={{ min: 0 }}
               />
             </>
           )}
