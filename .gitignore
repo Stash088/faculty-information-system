@@ -53,3 +53,16 @@ coverage/
 *.pid.lock
 .pnp.*
 .yarn/
+
+# Diploma & presentation files (not part of the app)
+*.docx
+*.pdf
+*.pptx
+*.html
+presentation.*
+convert_to_pptx.py
+html_to_pptx.py
+figures/
+ПРАВКИ_*
+Кузьминова*
+*Диплом*
