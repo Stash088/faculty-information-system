@@ -39,6 +39,9 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Visibility,
+  Download,
+  Block,
 } from '@mui/icons-material';
 import api from '../api/axios';
 
@@ -56,6 +59,7 @@ function AdminPage() {
   const [roles, setRoles] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [formData, setFormData] = useState({});
+  const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -97,16 +101,30 @@ function AdminPage() {
 
   const handleOpenDialog = (item = null) => {
     setFormData(item || {});
+    setSelectedFile(null);
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setFormData({});
+    setSelectedFile(null);
   };
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Файл слишком большой (макс. 10 МБ)');
+        return;
+      }
+      setSelectedFile(file);
+      setError('');
+    }
   };
 
   const handleSubmit = async () => {
@@ -125,10 +143,31 @@ function AdminPage() {
           await api.post('/courses', formData);
         }
       } else if (activeTab === 'materials') {
+        if (!formData.title || !formData.courseId) {
+          setError('Название и курс обязательны');
+          return;
+        }
+        if (!formData.id && !selectedFile) {
+          setError('Выберите файл для загрузки');
+          return;
+        }
+        const data = new FormData();
+        data.append('title', formData.title);
+        data.append('description', formData.description || '');
+        data.append('courseId', formData.courseId);
+        data.append('type', formData.type || 'methodical');
+        data.append('isPublished', formData.isPublished || false);
+        if (selectedFile) {
+          data.append('file', selectedFile);
+        }
         if (formData.id) {
-          await api.put(`/materials/${formData.id}`, formData);
+          await api.put(`/materials/${formData.id}`, data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
         } else {
-          await api.post('/materials', formData);
+          await api.post('/materials', data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
         }
       } else if (activeTab === 'users') {
         if (formData.id) {
@@ -140,7 +179,7 @@ function AdminPage() {
       handleCloseDialog();
       fetchData();
     } catch (err) {
-      setError('Ошибка сохранения данных');
+      setError(err.response?.data?.message || 'Ошибка сохранения данных');
       console.error(err);
     }
   };
@@ -154,11 +193,23 @@ function AdminPage() {
         await api.delete(`/materials/${id}`);
       } else if (activeTab === 'courses') {
         await api.delete(`/courses/${id}`);
+      } else if (activeTab === 'users') {
+        await api.delete(`/users/${id}`);
       }
       fetchData();
     } catch (err) {
-      setError('Ошибка удаления');
+      setError(err.response?.data?.message || 'Ошибка удаления');
       console.error(err);
+    }
+  };
+
+  const handleToggleBlock = async (user) => {
+    if (!window.confirm(`${user.isBlocked ? 'Разблокировать' : 'Заблокировать'} пользователя ${user.email}?`)) return;
+    try {
+      await api.patch(`/users/${user.id}/toggle-block`);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Ошибка блокировки');
     }
   };
 
@@ -253,7 +304,9 @@ function AdminPage() {
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Название</TableCell>
+                <TableCell>Курс</TableCell>
                 <TableCell>Тип</TableCell>
+                <TableCell>Файл</TableCell>
                 <TableCell>Действия</TableCell>
               </TableRow>
             </TableHead>
@@ -262,11 +315,29 @@ function AdminPage() {
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
                   <TableCell>{item.title}</TableCell>
+                  <TableCell>{item.course?.name || '—'}</TableCell>
                   <TableCell>
                     <Chip label={item.type} size="small" />
                   </TableCell>
                   <TableCell>
-                    <IconButton onClick={() => handleDelete(item.id)}>
+                    {item.filePath ? (
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton size="small" onClick={() => window.open(`/api/materials/${item.id}/view`, '_blank')} title="Просмотр">
+                          <Visibility />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => window.location.href = `/api/materials/${item.id}/download`} title="Скачать">
+                          <Download />
+                        </IconButton>
+                      </Box>
+                    ) : (
+                      <Chip label="Нет файла" size="small" variant="outlined" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleOpenDialog(item)} title="Редактировать">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(item.id)} color="error" title="Удалить">
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -323,6 +394,7 @@ function AdminPage() {
                 <TableCell>Имя</TableCell>
                 <TableCell>Роль</TableCell>
                 <TableCell>Статус</TableCell>
+                <TableCell>Действия</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -337,11 +409,26 @@ function AdminPage() {
                     <Chip label={item.role?.name || 'Неизвестно'} size="small" />
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      label={item.isActive ? 'Активен' : 'Отключён'}
-                      color={item.isActive ? 'success' : 'error'}
-                      size="small"
-                    />
+                    {item.isBlocked ? (
+                      <Chip label="Заблокирован" color="error" size="small" />
+                    ) : (
+                      <Chip label="Активен" color="success" size="small" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleOpenDialog(item)} title="Редактировать">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleToggleBlock(item)}
+                      title={item.isBlocked ? 'Разблокировать' : 'Заблокировать'}
+                      color={item.isBlocked ? 'success' : 'warning'}
+                    >
+                      <Block />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(item.id)} color="error" title="Удалить">
+                      <DeleteIcon />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}
@@ -488,15 +575,18 @@ function AdminPage() {
                 multiline
                 rows={3}
               />
-              <TextField
-                fullWidth
-                label="ID курса"
-                type="number"
-                value={formData.courseId || ''}
-                onChange={(e) => handleChange('courseId', parseInt(e.target.value))}
-                margin="normal"
-                required
-              />
+              <FormControl fullWidth margin="normal" required>
+                <InputLabel>Курс</InputLabel>
+                <Select
+                  value={formData.courseId || ''}
+                  onChange={(e) => handleChange('courseId', e.target.value)}
+                  label="Курс"
+                >
+                  {courses.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Тип материала</InputLabel>
                 <Select
@@ -511,6 +601,30 @@ function AdminPage() {
                   <MenuItem value="additional">Дополнительный</MenuItem>
                 </Select>
               </FormControl>
+              <Box sx={{ mt: 2, mb: 1 }}>
+                <input
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.mp4,.webm,.mp3,.wav,.zip,.rar,.jpg,.jpeg,.png,.gif"
+                  style={{ display: 'none' }}
+                  id="admin-material-file-input"
+                  type="file"
+                  onChange={handleFileChange}
+                />
+                <label htmlFor="admin-material-file-input">
+                  <Button variant="outlined" component="span" fullWidth>
+                    {selectedFile ? `Выбран: ${selectedFile.name}` : (formData.id ? 'Заменить файл (необязательно)' : 'Выбрать файл')}
+                  </Button>
+                </label>
+                {selectedFile && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    Размер: {(selectedFile.size / 1024).toFixed(1)} КБ
+                  </Typography>
+                )}
+                {formData.id && !selectedFile && formData.fileName && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    Текущий файл: {formData.fileName}
+                  </Typography>
+                )}
+              </Box>
               <FormControlLabel
                 control={
                   <Switch

@@ -1,6 +1,8 @@
 /**
  * Контроллер контента (новости, курсы, материалы)
  */
+const path = require('path');
+const fs = require('fs');
 const { News, Course, Material, Schedule, User, Department, Group } = require('../models');
 const { Op } = require('sequelize');
 const { ApiError } = require('../middleware/errorHandler');
@@ -357,24 +359,37 @@ exports.getTeachers = async (req, res, next) => {
 
 exports.createMaterial = async (req, res, next) => {
   try {
-    const { title, description, courseId, type, isPublished, fileUrl, fileName, fileSize, mimeType } = req.body;
+    const { title, description, courseId, type, isPublished } = req.body;
 
     if (!title || !courseId) {
+      if (req.file) require('fs').unlinkSync(req.file.path);
       throw new Error('Название и курс обязательны');
+    }
+
+    let filePath = '';
+    let fileName = title;
+    let fileSize = 0;
+    let mimeType = 'application/octet-stream';
+
+    if (req.file) {
+      filePath = `/uploads/${req.file.filename}`;
+      fileName = req.file.originalname;
+      fileSize = req.file.size;
+      mimeType = req.file.mimetype;
     }
 
     const material = await Material.create({
       title,
       description,
-      courseId,
+      courseId: parseInt(courseId, 10),
       teacherId: req.userId,
-      filePath: fileUrl || '',
-      fileName: fileName || title,
-      fileSize: fileSize || 0,
-      mimeType: mimeType || 'application/octet-stream',
+      filePath,
+      fileName,
+      fileSize,
+      mimeType,
       type: type || 'methodical',
-      isPublished: isPublished || false,
-      publishedAt: isPublished ? new Date() : null,
+      isPublished: isPublished === 'true' || isPublished === true || false,
+      publishedAt: (isPublished === 'true' || isPublished === true) ? new Date() : null,
     });
 
     const result = await Material.findByPk(material.id, {
@@ -385,6 +400,127 @@ exports.createMaterial = async (req, res, next) => {
     });
 
     res.status(201).json(result);
+  } catch (error) {
+    if (req.file) {
+      try { require('fs').unlinkSync(req.file.path); } catch (e) { /* ignore */ }
+    }
+    next(error);
+  }
+};
+
+exports.updateMaterial = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, description, courseId, type, isPublished } = req.body;
+
+    const material = await Material.findByPk(id);
+    if (!material) {
+      if (req.file) require('fs').unlinkSync(req.file.path);
+      return next(ApiError.notFound('Материал не найден'));
+    }
+
+    // Проверка прав: только admin или автор
+    if (req.userRole !== 'admin' && material.teacherId !== req.userId) {
+      if (req.file) require('fs').unlinkSync(req.file.path);
+      return next(ApiError.forbidden('Нет прав на редактирование'));
+    }
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (courseId !== undefined) updateData.courseId = parseInt(courseId, 10);
+    if (type !== undefined) updateData.type = type;
+    if (isPublished !== undefined) {
+      updateData.isPublished = isPublished === 'true' || isPublished === true;
+      if (updateData.isPublished && !material.publishedAt) {
+        updateData.publishedAt = new Date();
+      }
+    }
+
+    if (req.file) {
+      // Удаляем старый файл
+      if (material.filePath) {
+        const fs = require('fs');
+        const oldPath = path.join(__dirname, '../../', material.filePath);
+        if (fs.existsSync(oldPath)) {
+          try { fs.unlinkSync(oldPath); } catch (e) { /* ignore */ }
+        }
+      }
+      updateData.filePath = `/uploads/${req.file.filename}`;
+      updateData.fileName = req.file.originalname;
+      updateData.fileSize = req.file.size;
+      updateData.mimeType = req.file.mimetype;
+    }
+
+    await material.update(updateData);
+
+    const result = await Material.findByPk(material.id, {
+      include: [
+        { model: User, as: 'teacher', attributes: ['id', 'firstName', 'lastName'] },
+        { model: Course, as: 'course', attributes: ['id', 'name'] },
+      ],
+    });
+
+    res.json(result);
+  } catch (error) {
+    if (req.file) {
+      try { require('fs').unlinkSync(req.file.path); } catch (e) { /* ignore */ }
+    }
+    next(error);
+  }
+};
+
+exports.downloadMaterial = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const material = await Material.findByPk(id);
+    if (!material) {
+      return next(ApiError.notFound('Материал не найден'));
+    }
+
+    if (!material.filePath) {
+      return next(ApiError.notFound('Файл не загружен'));
+    }
+
+    const fs = require('fs');
+    const filePath = path.join(__dirname, '../../', material.filePath);
+    if (!fs.existsSync(filePath)) {
+      return next(ApiError.notFound('Файл не найден на диске'));
+    }
+
+    // Инкремент счётчика
+    await material.increment('downloads');
+
+    res.download(filePath, material.fileName);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.viewMaterial = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const material = await Material.findByPk(id);
+    if (!material) {
+      return next(ApiError.notFound('Материал не найден'));
+    }
+
+    if (!material.filePath) {
+      return next(ApiError.notFound('Файл не загружен'));
+    }
+
+    const fs = require('fs');
+    const filePath = path.join(__dirname, '../../', material.filePath);
+    if (!fs.existsSync(filePath)) {
+      return next(ApiError.notFound('Файл не найден на диске'));
+    }
+
+    // Инкремент счётчика просмотров
+    await material.increment('views');
+
+    res.setHeader('Content-Type', material.mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(material.fileName)}"`);
+    res.sendFile(filePath);
   } catch (error) {
     next(error);
   }

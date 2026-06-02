@@ -3,7 +3,7 @@
  * @module pages/MaterialsPage
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import {
   Box,
@@ -26,6 +26,8 @@ import {
   Select,
   MenuItem,
   Alert,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   Download,
@@ -35,6 +37,8 @@ import {
   PictureAsPdf,
   Add,
   Delete,
+  CloudUpload,
+  Edit,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -47,6 +51,7 @@ function MaterialsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -54,7 +59,10 @@ function MaterialsPage() {
     type: 'methodical',
     isPublished: false,
   });
+  const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef(null);
 
   const isAdmin = user?.roleId === 1 || user?.role?.code === 'admin';
   const isTeacher = user?.role?.code === 'admin' || user?.role?.code === 'teacher' || user?.role?.code === 'methodist';
@@ -79,24 +87,52 @@ function MaterialsPage() {
     }
   };
 
-  const handleOpenDialog = () => {
-    setFormData({
-      title: '',
-      description: '',
-      courseId: '',
-      type: 'methodical',
-      isPublished: false,
-    });
+  const handleOpenDialog = (material = null) => {
+    if (material) {
+      setEditingMaterial(material);
+      setFormData({
+        title: material.title,
+        description: material.description || '',
+        courseId: material.courseId,
+        type: material.type,
+        isPublished: material.isPublished,
+      });
+    } else {
+      setEditingMaterial(null);
+      setFormData({
+        title: '',
+        description: '',
+        courseId: '',
+        type: 'methodical',
+        isPublished: false,
+      });
+    }
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+    setEditingMaterial(null);
+    setSelectedFile(null);
     setError('');
   };
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Файл слишком большой (макс. 10 МБ)');
+        return;
+      }
+      setSelectedFile(file);
+      setError('');
+    }
   };
 
   const handleSubmit = async () => {
@@ -106,12 +142,38 @@ function MaterialsPage() {
         setError('Название и курс обязательны');
         return;
       }
+      if (!editingMaterial && !selectedFile) {
+        setError('Выберите файл для загрузки');
+        return;
+      }
 
-      await api.post('/materials', formData);
+      setSubmitting(true);
+      const data = new FormData();
+      data.append('title', formData.title);
+      data.append('description', formData.description || '');
+      data.append('courseId', formData.courseId);
+      data.append('type', formData.type);
+      data.append('isPublished', formData.isPublished);
+      if (selectedFile) {
+        data.append('file', selectedFile);
+      }
+
+      if (editingMaterial) {
+        await api.put(`/materials/${editingMaterial.id}`, data, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        await api.post('/materials', data, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
+
       handleCloseDialog();
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.message || 'Ошибка создания материала');
+      setError(err.response?.data?.message || `Ошибка ${editingMaterial ? 'обновления' : 'создания'} материала`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -123,6 +185,22 @@ function MaterialsPage() {
     } catch (err) {
       setError('Ошибка удаления');
     }
+  };
+
+  const handleView = (material) => {
+    if (!material.filePath) {
+      setError('Файл не загружен');
+      return;
+    }
+    window.open(`/api/materials/${material.id}/view`, '_blank');
+  };
+
+  const handleDownload = (material) => {
+    if (!material.filePath) {
+      setError('Файл не загружен');
+      return;
+    }
+    window.location.href = `/api/materials/${material.id}/download`;
   };
 
   const getFileIcon = (mimeType) => {
@@ -154,6 +232,10 @@ function MaterialsPage() {
     return colors[type] || 'default';
   };
 
+  const canEdit = (material) => {
+    return isAdmin || material.teacherId === user?.id;
+  };
+
   const filteredMaterials = materials.filter(
     (material) =>
       material.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -180,13 +262,13 @@ function MaterialsPage() {
           </Typography>
         </Box>
         {isTeacher && (
-          <Button variant="contained" color="primary" startIcon={<Add />} onClick={handleOpenDialog}>
+          <Button variant="contained" color="primary" startIcon={<Add />} onClick={() => handleOpenDialog()}>
             Загрузить материал
           </Button>
         )}
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
       <TextField
         fullWidth
@@ -227,13 +309,18 @@ function MaterialsPage() {
                         {material.course?.name}
                       </Typography>
                     </Box>
+                    {canEdit(material) && (
+                      <Button size="small" onClick={() => handleOpenDialog(material)}>
+                        <Edit fontSize="small" />
+                      </Button>
+                    )}
                     {isAdmin && (
                       <Button size="small" color="error" onClick={() => handleDelete(material.id)}>
-                        <Delete />
+                        <Delete fontSize="small" />
                       </Button>
                     )}
                   </Box>
-                  
+
                   {material.description && (
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       {material.description}
@@ -253,9 +340,23 @@ function MaterialsPage() {
                         variant="outlined"
                       />
                     )}
+                    {material.views > 0 && (
+                      <Chip
+                        label={`${material.views} просм.`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
+                    {material.downloads > 0 && (
+                      <Chip
+                        label={`${material.downloads} скач.`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
                   </Box>
 
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                     {material.teacher?.lastName} {material.teacher?.firstName}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
@@ -263,10 +364,20 @@ function MaterialsPage() {
                   </Typography>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" startIcon={<Visibility />}>
+                  <Button
+                    size="small"
+                    startIcon={<Visibility />}
+                    onClick={() => handleView(material)}
+                    disabled={!material.filePath}
+                  >
                     Просмотр
                   </Button>
-                  <Button size="small" startIcon={<Download />}>
+                  <Button
+                    size="small"
+                    startIcon={<Download />}
+                    onClick={() => handleDownload(material)}
+                    disabled={!material.filePath}
+                  >
                     Скачать
                   </Button>
                 </CardActions>
@@ -276,9 +387,11 @@ function MaterialsPage() {
         </Grid>
       )}
 
-      {/* Dialog для создания материала */}
+      {/* Диалог создания/редактирования материала */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Загрузить материал</DialogTitle>
+        <DialogTitle>
+          {editingMaterial ? 'Редактировать материал' : 'Загрузить материал'}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
             <TextField
@@ -326,19 +439,52 @@ function MaterialsPage() {
               </Select>
             </FormControl>
 
-            <Button
-              variant={formData.isPublished ? 'contained' : 'outlined'}
-              color={formData.isPublished ? 'success' : 'primary'}
-              onClick={() => handleChange('isPublished', !formData.isPublished)}
-            >
-              {formData.isPublished ? 'Опубликован' : 'Опубликовать'}
-            </Button>
+            <Box>
+              <input
+                ref={fileInputRef}
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.mp4,.webm,.mp3,.wav,.zip,.rar,.jpg,.jpeg,.png,.gif"
+                style={{ display: 'none' }}
+                id="material-file-input"
+                type="file"
+                onChange={handleFileChange}
+              />
+              <label htmlFor="material-file-input">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<CloudUpload />}
+                  fullWidth
+                >
+                  {selectedFile ? `Выбран: ${selectedFile.name}` : (editingMaterial ? 'Заменить файл (необязательно)' : 'Выбрать файл')}
+                </Button>
+              </label>
+              {selectedFile && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Размер: {(selectedFile.size / 1024).toFixed(1)} КБ
+                </Typography>
+              )}
+              {editingMaterial && !selectedFile && editingMaterial.fileName && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Текущий файл: {editingMaterial.fileName}
+                </Typography>
+              )}
+            </Box>
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.isPublished}
+                  onChange={(e) => handleChange('isPublished', e.target.checked)}
+                />
+              }
+              label={formData.isPublished ? 'Опубликован (виден студентам)' : 'Черновик (виден только преподавателям)'}
+            />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Отмена</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            Создать
+          <Button onClick={handleCloseDialog} disabled={submitting}>Отмена</Button>
+          <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
+            {submitting ? 'Сохранение...' : (editingMaterial ? 'Сохранить' : 'Создать')}
           </Button>
         </DialogActions>
       </Dialog>

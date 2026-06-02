@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/authMiddleware');
-const { requireAdmin } = require('../middleware/roleMiddleware');
+const { authenticate, optionalAuth } = require('../middleware/authMiddleware');
+const { requireAdmin, requireRoles } = require('../middleware/roleMiddleware');
+const upload = require('../middleware/upload');
 const contentController = require('../controllers/contentController');
 
 // News
@@ -18,7 +19,10 @@ router.delete('/courses/:id', authenticate, requireAdmin, contentController.dele
 
 // Materials
 router.get('/materials', contentController.getMaterials);
-router.post('/materials', authenticate, contentController.createMaterial);
+router.post('/materials', authenticate, upload.single('file'), contentController.createMaterial);
+router.put('/materials/:id', authenticate, upload.single('file'), contentController.updateMaterial);
+router.get('/materials/:id/download', optionalAuth, contentController.downloadMaterial);
+router.get('/materials/:id/view', optionalAuth, contentController.viewMaterial);
 router.delete('/materials/:id', authenticate, requireAdmin, contentController.deleteMaterial);
 
 // Schedule (CRUD)
