@@ -17,6 +17,7 @@ import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import SchedulePage from './pages/SchedulePage';
 import MaterialsPage from './pages/MaterialsPage';
+import MyMaterialsPage from './pages/MyMaterialsPage';
 import NewsPage from './pages/NewsPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
@@ -99,6 +100,7 @@ function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="schedule" element={<SchedulePage />} />
         <Route path="materials" element={<MaterialsPage />} />
+        <Route path="my-materials" element={<MyMaterialsPage />} />
         <Route path="news" element={<NewsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="admin" element={<AdminPage />} />

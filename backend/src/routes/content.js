@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, optionalAuth } = require('../middleware/authMiddleware');
-const { requireAdmin, requireRoles } = require('../middleware/roleMiddleware');
+const { requireAdmin, requireMethodist, requireMaterialOwnerOrAdmin } = require('../middleware/roleMiddleware');
 const upload = require('../middleware/upload');
 const contentController = require('../controllers/contentController');
 
@@ -11,16 +11,16 @@ router.post('/news', authenticate, requireAdmin, contentController.createNews);
 router.put('/news/:id', authenticate, requireAdmin, contentController.updateNews);
 router.delete('/news/:id', authenticate, requireAdmin, contentController.deleteNews);
 
-// Courses
+// Courses (admin + methodist могут управлять учебными программами — ФТ-М1)
 router.get('/courses', contentController.getCourses);
-router.post('/courses', authenticate, requireAdmin, contentController.createCourse);
-router.put('/courses/:id', authenticate, requireAdmin, contentController.updateCourse);
+router.post('/courses', authenticate, requireMethodist, contentController.createCourse);
+router.put('/courses/:id', authenticate, requireMethodist, contentController.updateCourse);
 router.delete('/courses/:id', authenticate, requireAdmin, contentController.deleteCourse);
 
-// Materials
+// Materials — создавать/редактировать могут admin/teacher/methodist с проверкой ownership (ФТ-П2)
 router.get('/materials', contentController.getMaterials);
-router.post('/materials', authenticate, upload.single('file'), contentController.createMaterial);
-router.put('/materials/:id', authenticate, upload.single('file'), contentController.updateMaterial);
+router.post('/materials', authenticate, requireMaterialOwnerOrAdmin, upload.single('file'), contentController.createMaterial);
+router.put('/materials/:id', authenticate, requireMaterialOwnerOrAdmin, upload.single('file'), contentController.updateMaterial);
 router.get('/materials/:id/download', optionalAuth, contentController.downloadMaterial);
 router.get('/materials/:id/view', optionalAuth, contentController.viewMaterial);
 router.delete('/materials/:id', authenticate, requireAdmin, contentController.deleteMaterial);
