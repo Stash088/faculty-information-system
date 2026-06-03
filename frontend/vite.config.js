@@ -21,4 +21,22 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  build: {
+    // Увеличиваем лимит chunk size чтобы убрать warning
+    chunkSizeWarningLimit: 1500,
+    // Минификация с esbuild (быстрее чем terser)
+    minify: 'esbuild',
+    // Параллельная сборка модулей
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        // Разбиваем большие библиотеки на отдельные chunks
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material'],
+          'redux-vendor': ['@reduxjs/toolkit', 'react-redux'],
+        },
+      },
+    },
+  },
 });

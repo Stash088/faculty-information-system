@@ -5,7 +5,7 @@ FROM node:18-alpine AS backend-builder
 
 WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --no-audit --no-fund
 COPY backend/ .
 
 # ===========================================================
@@ -16,18 +16,23 @@ FROM node:18-alpine AS frontend-builder
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 
+# Лимит памяти для Node.js (Vite build может есть много)
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm ci
+# --no-audit --no-fund ускоряют npm ci в 2-3 раза
+RUN npm ci --no-audit --no-fund --loglevel=error
 COPY frontend/ .
-RUN npm run build
+# Vite build с минимальным логированием
+RUN npm run build 2>&1 | tail -20
 
 # ===========================================================
 # Stage 3: Runtime — Node.js (API + static SPA)
 # ===========================================================
 FROM node:18-alpine
 
-# Системные зависимости (для pg_dump и т.п., опционально)
+# Системные зависимости (curl для healthcheck)
 RUN apk add --no-cache curl
 
 WORKDIR /app/backend
