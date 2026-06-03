@@ -5,7 +5,7 @@
 ## Доступ
 
 - **Production:** https://faculty-agu.ru
-- **По IP:** https://139.100.224.35 (резервный)
+- **По IP:** https://faculty-agu.ru (резервный)
 
 **Логины:**
 - `admin@faculty.ru` / `Admin123!` (администратор)
@@ -66,7 +66,7 @@
 ### 1. Установка Docker
 
 ```bash
-ssh root@YOUR_VPS_IP
+ssh root@ваш_VPS_IP
 curl -fsSL https://get.docker.com | sh
 apt-get install -y git
 ```
@@ -121,7 +121,7 @@ systemctl restart caddy
 
 В панели регистратора домена добавь **A-запись**:
 - **Имя/Хост:** `@` (корень)
-- **Значение:** `<IP_ТВОЕГО_VPS>`
+- **Значение:** `<ваш_VPS_IP>`
 - **TTL:** 300
 
 Caddy **автоматически** получит Let's Encrypt сертификат после пропагации DNS (5-30 минут).
