@@ -26,8 +26,29 @@ const contentRoutes = require('./routes/content');
 // Создание приложения Express
 const app = express();
 
-// Базовые middleware
-app.use(helmet());
+// Helmet с настройками для HTTP и HTTPS
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      fontSrc: ["'self'", 'https:', 'data:'],
+      formAction: ["'self'"],
+      frameAncestors: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'http:', 'https:'],
+      objectSrc: ["'none'"],
+      scriptSrc: ["'self'"],
+      scriptSrcAttr: ["'none'"],
+      styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+      // Отключаем upgrade-insecure-requests — приложение должно работать и по HTTP
+      upgradeInsecureRequests: [],
+    },
+  },
+  // Разрешаем загружать ресурсы с любого origin
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  // COOP: same-origin — для изоляции
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
+}));
 app.use(cors({
   origin: process.env.CLIENT_URL 
     ? process.env.CLIENT_URL.split(',').map(url => url.trim())
