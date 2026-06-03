@@ -6,6 +6,11 @@ version: '3.8'
 # - App Platform сам настраивает Nginx и SSL перед приложением
 # - Volume для uploads — файлы сохраняются между деплоями
 
+# Для локальной разработки:
+# 1. cp .env.example .env
+# 2. docker compose up --build
+# 3. Открой http://localhost:3050
+
 services:
   app:
     build:
@@ -15,6 +20,8 @@ services:
     restart: unless-stopped
     ports:
       - "3050:3000"
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
       PORT: 3000
