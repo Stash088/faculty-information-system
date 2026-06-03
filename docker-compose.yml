@@ -1,15 +1,10 @@
-version: '3.8'
-
-# Единый App Platform-совместимый стек:
-# - Один контейнер с Node.js (отдаёт и API, и SPA)
-# - PostgreSQL — внешняя (TimeWeb Managed PostgreSQL)
-# - App Platform сам настраивает Nginx и SSL перед приложением
-# - Volume для uploads — файлы сохраняются между деплоями
-
-# Для локальной разработки:
-# 1. cp .env.example .env
-# 2. docker compose up --build
-# 3. Открой http://localhost:3050
+# ============================================================
+# Docker Compose для TimeWeb App Platform
+# ============================================================
+# ВАЖНО для App Platform:
+# 1. Не используем volumes — TimeWeb сам управляет persistent storage
+# 2. Все env-переменные вводятся через UI App Platform (не через .env)
+# 3. Порт 3000 — TimeWeb проксирует на него через Nginx
 
 services:
   app:
@@ -19,31 +14,26 @@ services:
     container_name: faculty_app
     restart: unless-stopped
     ports:
-      - "3050:3000"
-    env_file:
-      - .env
+      - "3000:3000"
     environment:
+      # Эти переменные должны быть введены через UI App Platform
+      # Если TimeWeb не подставит — приложение не сможет подключиться к БД
       NODE_ENV: production
       PORT: 3000
-      DB_HOST: ${DB_HOST}
+      DB_HOST: ${DB_HOST:-}
       DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      DB_NAME: ${DB_NAME:-}
+      DB_USER: ${DB_USER:-}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
       JWT_ACCESS_EXPIRES: 15m
       JWT_REFRESH_EXPIRES: 30d
       CLIENT_URL: ${CLIENT_URL:-*}
-    volumes:
-      - app_uploads:/app/backend/uploads
-      - app_logs:/app/backend/logs
+      MAX_FILE_SIZE: 10485760
+      UPLOAD_PATH: ./uploads
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-
-volumes:
-  app_uploads:
-  app_logs:
