@@ -91,6 +91,7 @@ const seedUsers = async () => {
     { email: 'novikova@faculty.ru', password: 'Teacher123!', firstName: 'Елена', lastName: 'Новикова', roleId: 2 },
     { email: 'smirnov@student.ru', password: 'Student123!', firstName: 'Алексей', lastName: 'Смирнов', roleId: 4 },
     { email: 'volkova@student.ru', password: 'Student123!', firstName: 'Ольга', lastName: 'Волкова', roleId: 4 },
+    { email: 'applicant@faculty.ru', password: 'Applicant123!', firstName: 'Абитуриент', lastName: 'Тестовый', roleId: 5 },
   ];
 
   for (const user of users) {

@@ -21,6 +21,7 @@ import MyMaterialsPage from './pages/MyMaterialsPage';
 import NewsPage from './pages/NewsPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import ApplicantPage from './pages/ApplicantPage';
 import PrivateRoute from './components/auth/PrivateRoute';
 import PublicRoute from './components/auth/PublicRoute';
 import { getMe } from './redux/slices/authSlice';
@@ -104,6 +105,7 @@ function App() {
         <Route path="news" element={<NewsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="admin" element={<AdminPage />} />
+        <Route path="applicant" element={<ApplicantPage />} />
       </Route>
 
       {/* Перенаправление */}

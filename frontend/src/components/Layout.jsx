@@ -34,6 +34,7 @@ import {
   Person,
   Logout,
   School,
+  HowToReg,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/slices/authSlice';
@@ -46,6 +47,7 @@ const navItems = [
   { text: 'Расписание', icon: <Schedule />, path: '/schedule' },
   { text: 'Материалы', icon: <MenuBook />, path: '/materials' },
   { text: 'Новости', icon: <Newspaper />, path: '/news' },
+  { text: 'Поступление', icon: <HowToReg />, path: '/applicant' },
   { text: 'Администрирование', icon: <Dashboard />, path: '/admin', adminOnly: true },
 ];
 
