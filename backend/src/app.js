@@ -22,6 +22,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const statsRoutes = require('./routes/stats');
 const contentRoutes = require('./routes/content');
+const applicantContentRoutes = require('./routes/applicantContent');
 
 // Создание приложения Express
 const app = express();
@@ -85,6 +86,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api', contentRoutes);
+app.use('/api/applicant-content', applicantContentRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -129,6 +131,10 @@ const startServer = async () => {
     
     // Заполнение базы данных тестовыми данными
     await seedDatabase();
+
+    // Убедимся, что контент лендинга существует (идемпотентно)
+    const { ensureContent } = require('./controllers/applicantContentController');
+    await ensureContent();
     
     // Запуск сервера
     const PORT = process.env.PORT || 5000;

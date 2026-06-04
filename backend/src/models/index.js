@@ -16,6 +16,7 @@ const Group = require('./Group');
 const Department = require('./Department');
 const RefreshToken = require('./RefreshToken');
 const PasswordResetToken = require('./PasswordResetToken');
+const ApplicantContent = require('./ApplicantContent');
 
 // Role -> Users (one-to-many)
 Role.hasMany(User, {
@@ -179,5 +180,6 @@ module.exports = {
   Department,
   RefreshToken,
   PasswordResetToken,
+  ApplicantContent,
   syncModels,
 };

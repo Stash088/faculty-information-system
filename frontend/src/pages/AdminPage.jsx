@@ -44,6 +44,7 @@ import {
   Block,
 } from '@mui/icons-material';
 import api from '../api/axios';
+import ApplicantContentEditor from '../components/ApplicantContentEditor';
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -255,6 +256,7 @@ function AdminPage() {
     { key: 'departments', label: 'Кафедры' },
     { key: 'groups', label: 'Группы' },
     { key: 'users', label: 'Пользователи' },
+    { key: 'applicant', label: 'Лендинг' },
   ];
 
   return (
@@ -280,15 +282,19 @@ function AdminPage() {
       </Box>
 
       {/* Content */}
-      <Box sx={{ mb: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          Добавить
-        </Button>
-      </Box>
+      {activeTab !== 'applicant' && (
+        <Box sx={{ mb: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            Добавить
+          </Button>
+        </Box>
+      )}
+
+      {activeTab === 'applicant' && <ApplicantContentEditor />}
 
       {/* News Table */}
       {activeTab === 'news' && (

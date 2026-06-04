@@ -3,7 +3,7 @@
  * @module seeders
  */
 
-const { Role, User, Department, Group, Course, News, Material, Schedule } = require('../models');
+const { Role, User, Department, Group, Course, News, Material, Schedule, ApplicantContent } = require('../models');
 const logger = require('../utils/logger');
 
 /**
@@ -386,6 +386,23 @@ const seedSchedule = async () => {
 };
 
 /**
+ * Сидер контента лендинга абитуриента (идемпотентный)
+ */
+const seedApplicantContent = async () => {
+  const { DEFAULT_CONTENT, ensureContent } = require('../controllers/applicantContentController');
+  const [content, created] = await ApplicantContent.findOrCreate({
+    where: { id: 1 },
+    defaults: { id: 1, ...DEFAULT_CONTENT },
+  });
+  if (created) {
+    logger.info('✓ Контент лендинга абитуриента создан');
+  } else {
+    logger.info('  Контент лендинга абитуриента уже существует');
+  }
+  return content;
+};
+
+/**
  * Главная функция сидирования
  */
 const seedDatabase = async () => {
@@ -405,6 +422,7 @@ const seedDatabase = async () => {
     await seedNews();
     await seedMaterials();
     await seedSchedule();
+    await seedApplicantContent();
 
     logger.info('✓ База данных успешно заполнена тестовыми данными');
   } catch (error) {
