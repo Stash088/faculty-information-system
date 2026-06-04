@@ -9,7 +9,7 @@ const {
   getApplicantContent,
   updateApplicantContent,
 } = require('../controllers/applicantContentController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate } = require('../middleware/authMiddleware');
 const { requireAdmin } = require('../middleware/roleMiddleware');
 
 router.get('/', authenticate, getApplicantContent);
