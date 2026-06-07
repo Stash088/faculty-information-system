@@ -147,6 +147,7 @@ const startServer = async () => {
       logger.info(`URL API: http://localhost:${PORT}/api`);
     });
   } catch (error) {
+    console.error('STARTUP ERROR:', error);
     logger.error('Ошибка запуска сервера:', error);
     process.exit(1);
   }
