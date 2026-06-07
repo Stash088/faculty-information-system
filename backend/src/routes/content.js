@@ -4,6 +4,7 @@ const { authenticate, optionalAuth } = require('../middleware/authMiddleware');
 const { requireAdmin, requireMethodist, requireMaterialOwnerOrAdmin } = require('../middleware/roleMiddleware');
 const upload = require('../middleware/upload');
 const contentController = require('../controllers/contentController');
+const categoryController = require('../controllers/categoryController');
 
 // News
 router.get('/news', contentController.getNews);
@@ -46,5 +47,12 @@ router.delete('/groups/:id', authenticate, requireAdmin, contentController.delet
 
 // Teachers
 router.get('/teachers', contentController.getTeachers);
+
+// Categories (CRUD для категорий материалов)
+router.get('/categories', categoryController.getCategories);
+router.get('/categories/:id', categoryController.getCategory);
+router.post('/categories', authenticate, requireAdmin, categoryController.createCategory);
+router.put('/categories/:id', authenticate, requireAdmin, categoryController.updateCategory);
+router.delete('/categories/:id', authenticate, requireAdmin, categoryController.deleteCategory);
 
 module.exports = router;

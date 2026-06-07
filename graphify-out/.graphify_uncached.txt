@@ -1,0 +1,13 @@
+/Users/amir/Desktop/back_work_final/README.md
+/Users/amir/Desktop/back_work_final/graphify-out/converted/Кузьминова Диплом 1-2 печать_финал_1e1988fc.md
+/Users/amir/Desktop/back_work_final/graphify-out/converted/Кузьминова Диплом 1-2 печать_финал_v2_379d5522.md
+/Users/amir/Desktop/back_work_final/docker-compose.yml
+/Users/amir/Desktop/back_work_final/frontend/index.html
+/Users/amir/Desktop/back_work_final/backend/uploads/1780438779416_7146043_test-lecture-v2.pdf
+/Users/amir/Desktop/back_work_final/backend/uploads/1780438981653_436134671_test-pdf.pdf
+/Users/amir/Desktop/back_work_final/figures/05_profile.png
+/Users/amir/Desktop/back_work_final/figures/04_materials.png
+/Users/amir/Desktop/back_work_final/figures/02_dashboard.png
+/Users/amir/Desktop/back_work_final/figures/01_login.png
+/Users/amir/Desktop/back_work_final/figures/03_schedule.png
+/Users/amir/Desktop/back_work_final/figures/06_news.png

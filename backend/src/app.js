@@ -132,9 +132,12 @@ const startServer = async () => {
     // Заполнение базы данных тестовыми данными
     await seedDatabase();
 
-    // Убедимся, что контент лендинга существует (идемпотентно)
+    // Идемпотентно: убедимся, что категории и контент лендинга существуют
+    // (если БД уже была заполнена ранее, без этих таблиц)
     const { ensureContent } = require('./controllers/applicantContentController');
+    const { seedCategories } = require('./seeders');
     await ensureContent();
+    await seedCategories();
     
     // Запуск сервера
     const PORT = process.env.PORT || 5000;

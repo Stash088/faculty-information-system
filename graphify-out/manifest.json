@@ -1,0 +1,286 @@
+{
+  "/Users/amir/Desktop/back_work_final/frontend/vite.config.js": {
+    "mtime": 1780492475.8857062,
+    "hash": "3890f9e27b2126e4bcc2ff8a12d8a08e"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/main.jsx": {
+    "mtime": 1775153547.52126,
+    "hash": "1bd849a77d8e18f4ac1e64d1c8d02721"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/App.jsx": {
+    "mtime": 1780522930.411917,
+    "hash": "7e21829aef4a596c3338b6254672cefb"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/components/Layout.jsx": {
+    "mtime": 1780522945.7919726,
+    "hash": "83685b86cddb1eaed142af939fb701a4"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/components/ApplicantContentEditor.jsx": {
+    "mtime": 1780569973.773942,
+    "hash": "f2b0521ae238172ccb3c14753bfa7cc7"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/components/auth/PrivateRoute.jsx": {
+    "mtime": 1775157868.6007657,
+    "hash": "d6285e1adccf3701936da266339cdf4e"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/components/auth/PublicRoute.jsx": {
+    "mtime": 1775157343.4448545,
+    "hash": "107546e500dcbdaa91435b7774873bbe"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/api/axios.js": {
+    "mtime": 1780434210.730947,
+    "hash": "118a2cdcfb7c7b2997d5f629ba5ee4f2"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/api/applicantContent.js": {
+    "mtime": 1780569779.6225445,
+    "hash": "e4b3b306ca827d739afce0ec04e2bd3e"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/HomePage.jsx": {
+    "mtime": 1780344244.254974,
+    "hash": "461b6e65651ce486e3745ba775e86d93"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/DashboardPage.jsx": {
+    "mtime": 1775157577.333018,
+    "hash": "cf59052bd6864f30c962e49a26f80095"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/NewsPage.jsx": {
+    "mtime": 1780434289.0961242,
+    "hash": "e80e15bd09b7903b48081c510a35b6f1"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/ResetPasswordPage.jsx": {
+    "mtime": 1780439219.5526638,
+    "hash": "8432359fc8e6f4333ae6ed7faf9ee980"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/AdminPage.jsx": {
+    "mtime": 1780570002.1124885,
+    "hash": "4f29c012d2ba4cfdebf0ffd44d1463eb"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/MaterialsPage.jsx": {
+    "mtime": 1780438559.234204,
+    "hash": "c739085aa0f4c50bbf13f7798df5a103"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/ForgotPasswordPage.jsx": {
+    "mtime": 1780439205.402837,
+    "hash": "3697532475e14a785cded8df06fa2d89"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/LoginPage.jsx": {
+    "mtime": 1780439182.2804625,
+    "hash": "84d80f24a02e300a7afb36ea38da7f7a"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/RegisterPage.jsx": {
+    "mtime": 1780434255.856073,
+    "hash": "0dc376af1cc6be5100ab560de0c6a042"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/ApplicantPage.jsx": {
+    "mtime": 1780569864.2246718,
+    "hash": "1214a4956691f4b1747b90cbfea7bc57"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/MyMaterialsPage.jsx": {
+    "mtime": 1780440101.4513006,
+    "hash": "e990d771d8ea73732c407c63fd7fb85a"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/SchedulePage.jsx": {
+    "mtime": 1780439524.973316,
+    "hash": "69db57297a8d37838f42ecf34ef458e6"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/pages/ProfilePage.jsx": {
+    "mtime": 1780434261.8550174,
+    "hash": "26acbd7f9fb18537a1a2c47957d1c0fa"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/redux/store.js": {
+    "mtime": 1780434283.8982515,
+    "hash": "f623a79c0d57a9434eb0fc09af6b66a8"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/src/redux/slices/authSlice.js": {
+    "mtime": 1775158501.3722968,
+    "hash": "6b3c91d67a825d5e8227520a7a39a197"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/app.js": {
+    "mtime": 1780570054.1098516,
+    "hash": "b7abf6d024f661fd3450883c1cc9df9e"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/middleware/authMiddleware.js": {
+    "mtime": 1775153334.957237,
+    "hash": "e84a9754d099c40a5c7442518099b35c"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/middleware/upload.js": {
+    "mtime": 1780438453.3852496,
+    "hash": "e63ef927722b9e35d7ca33afadc54250"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/middleware/errorHandler.js": {
+    "mtime": 1775153362.0173519,
+    "hash": "35f39040e7259b227eafb136cb2c58ca"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/middleware/roleMiddleware.js": {
+    "mtime": 1775153348.5964792,
+    "hash": "abbbf5a9c71efeefd61fc4546f7f5703"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/config/database.js": {
+    "mtime": 1775154080.2154734,
+    "hash": "14c52ff9dc1cf456079b59a377e1817a"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/config/auth.js": {
+    "mtime": 1775153185.4921203,
+    "hash": "0d7b29d490685452125a684554674d30"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/config/app.js": {
+    "mtime": 1775153193.619268,
+    "hash": "ad3fafaeaf7f91e29ed7cdae75d12023"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/utils/logger.js": {
+    "mtime": 1775153323.463201,
+    "hash": "da9f09cb877a431718bd0937e0833dad"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/PasswordResetToken.js": {
+    "mtime": 1780439056.2043886,
+    "hash": "a67b7d4448634a5dd1dbe133cbc45049"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/Role.js": {
+    "mtime": 1775153201.4150693,
+    "hash": "ba8d1e434132617f70dd7a3adf005673"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/ApplicantContent.js": {
+    "mtime": 1780523554.4187374,
+    "hash": "c376019e10323c12810dc08d53611c4d"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/Material.js": {
+    "mtime": 1775153232.7620656,
+    "hash": "5776bb291b0b082722d4ed55b028e385"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/User.js": {
+    "mtime": 1780434504.4117968,
+    "hash": "90312b18e2e27574c5ecf0f972319d2e"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/RefreshToken.js": {
+    "mtime": 1775153281.5980978,
+    "hash": "3635de1e31f86aa0e71ff7ec362a71a1"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/index.js": {
+    "mtime": 1780569689.5252209,
+    "hash": "87142841a7125cdb7a47dafd01051e42"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/Course.js": {
+    "mtime": 1775160791.69955,
+    "hash": "67e95fc27a8af849930df433c87db4c6"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/Schedule.js": {
+    "mtime": 1775153246.5258465,
+    "hash": "8f4fc4321e7c83d10728339be4fc66d4"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/Department.js": {
+    "mtime": 1775153273.9577093,
+    "hash": "d614455054340b5c6fed953161187ed0"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/News.js": {
+    "mtime": 1775153258.8203526,
+    "hash": "9b0e74c2cafadb055ca00790f914e0bc"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/models/Group.js": {
+    "mtime": 1775153266.4934936,
+    "hash": "e23ae62409cf03420cafa576564ea384"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/seeders/index.js": {
+    "mtime": 1780570041.0235703,
+    "hash": "e0d5c624d844b052d46d410d2f1e31d0"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/controllers/applicantContentController.js": {
+    "mtime": 1780569724.493009,
+    "hash": "e098cf676001800eacc178c06b802a9f"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/controllers/contentController.js": {
+    "mtime": 1780439968.2350924,
+    "hash": "c5b4786182b2d4d1b6884457da033c73"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/controllers/userController.js": {
+    "mtime": 1776109363.898229,
+    "hash": "d251e35e76f7392f2f5f79e0dcfb8aa0"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/controllers/authController.js": {
+    "mtime": 1780439145.0427039,
+    "hash": "0b21713ab6c02c877f9838eab9305075"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/controllers/statsController.js": {
+    "mtime": 1775157380.710475,
+    "hash": "e42010a8276ad051efd1b34eeda05bb4"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/routes/applicantContent.js": {
+    "mtime": 1780570249.5800748,
+    "hash": "fd82eb3a766095acb48d177641a09881"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/routes/auth.js": {
+    "mtime": 1780439161.34084,
+    "hash": "696f3537cc484906cdd2c156ecb55615"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/routes/users.js": {
+    "mtime": 1780434158.9881651,
+    "hash": "e91595374de93c7e97a6663f33734f46"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/routes/content.js": {
+    "mtime": 1780440060.773658,
+    "hash": "6e0b4fb29b90ff4e816605092a5fbe9a"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/routes/stats.js": {
+    "mtime": 1775157386.8969553,
+    "hash": "959ced6fbde49c31b1c919cf2da88548"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/services/emailService.js": {
+    "mtime": 1780439045.804015,
+    "hash": "6ca84f3674d7405e75592b63c66d7b3a"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/src/services/tokenService.js": {
+    "mtime": 1775153312.7554445,
+    "hash": "df189ee942d6be4c22ed8a88fbda2d6d"
+  },
+  "/Users/amir/Desktop/back_work_final/README.md": {
+    "mtime": 1780522016.0616043,
+    "hash": "40b5ef34a80cb2e54faa2e6dd49d2724"
+  },
+  "/Users/amir/Desktop/back_work_final/graphify-out/converted/\u041a\u0443\u0437\u044c\u043c\u0438\u043d\u043e\u0432\u0430 \u0414\u0438\u043f\u043b\u043e\u043c 1-2 \u043f\u0435\u0447\u0430\u0442\u044c_\u0444\u0438\u043d\u0430\u043b_1e1988fc.md": {
+    "mtime": 1780839491.6386786,
+    "hash": "cffaaccb8bb31153254860a92f9180c8"
+  },
+  "/Users/amir/Desktop/back_work_final/graphify-out/converted/\u041a\u0443\u0437\u044c\u043c\u0438\u043d\u043e\u0432\u0430 \u0414\u0438\u043f\u043b\u043e\u043c 1-2 \u043f\u0435\u0447\u0430\u0442\u044c_\u0444\u0438\u043d\u0430\u043b_v2_379d5522.md": {
+    "mtime": 1780839491.848446,
+    "hash": "c239f7330f559fe1a77b024a171c4cdf"
+  },
+  "/Users/amir/Desktop/back_work_final/docker-compose.yml": {
+    "mtime": 1780491847.0176861,
+    "hash": "2bc181395b1ee882774968959577f1c4"
+  },
+  "/Users/amir/Desktop/back_work_final/frontend/index.html": {
+    "mtime": 1780344292.191002,
+    "hash": "18118214245dd9fd3366c93d84a0895a"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/uploads/1780438779416_7146043_test-lecture-v2.pdf": {
+    "mtime": 1780438779.4167507,
+    "hash": "96d4f26825690c4ccc6007908f3c0932"
+  },
+  "/Users/amir/Desktop/back_work_final/backend/uploads/1780438981653_436134671_test-pdf.pdf": {
+    "mtime": 1780438981.6546247,
+    "hash": "84f50f977ced075283c38c808a5f3875"
+  },
+  "/Users/amir/Desktop/back_work_final/figures/05_profile.png": {
+    "mtime": 1780349454.6213896,
+    "hash": "ffe00b4d256f31e2207ac5ac2fcf633a"
+  },
+  "/Users/amir/Desktop/back_work_final/figures/04_materials.png": {
+    "mtime": 1780349444.6819623,
+    "hash": "49750798a1b5c0b440ec9a9437819072"
+  },
+  "/Users/amir/Desktop/back_work_final/figures/02_dashboard.png": {
+    "mtime": 1780349412.5647147,
+    "hash": "ec84fe82f35b409c76594f541acd7eac"
+  },
+  "/Users/amir/Desktop/back_work_final/figures/01_login.png": {
+    "mtime": 1780349179.9695253,
+    "hash": "7093339540c9c32d4d4e32963e1066aa"
+  },
+  "/Users/amir/Desktop/back_work_final/figures/03_schedule.png": {
+    "mtime": 1780349433.012473,
+    "hash": "302bd98360dac3371be62b322409fa1a"
+  },
+  "/Users/amir/Desktop/back_work_final/figures/06_news.png": {
+    "mtime": 1780349464.2442439,
+    "hash": "66c2616ac0b328bbe9c97d548a0d1abb"
+  }
+}

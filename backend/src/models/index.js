@@ -17,6 +17,7 @@ const Department = require('./Department');
 const RefreshToken = require('./RefreshToken');
 const PasswordResetToken = require('./PasswordResetToken');
 const ApplicantContent = require('./ApplicantContent');
+const Category = require('./Category');
 
 // Role -> Users (one-to-many)
 Role.hasMany(User, {
@@ -76,6 +77,16 @@ User.hasMany(Material, {
 Material.belongsTo(User, {
   foreignKey: 'teacherId',
   as: 'teacher',
+});
+
+// Category -> Materials (one-to-many)
+Category.hasMany(Material, {
+  foreignKey: 'categoryId',
+  as: 'materials',
+});
+Material.belongsTo(Category, {
+  foreignKey: 'categoryId',
+  as: 'category',
 });
 
 // Course -> Schedules (one-to-many)
@@ -181,5 +192,6 @@ module.exports = {
   RefreshToken,
   PasswordResetToken,
   ApplicantContent,
+  Category,
   syncModels,
 };

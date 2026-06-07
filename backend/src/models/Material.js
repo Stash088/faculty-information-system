@@ -31,6 +31,10 @@ const Material = sequelize.define('Material', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  categoryId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   filePath: {
     type: DataTypes.STRING(500),
     allowNull: false,

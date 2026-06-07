@@ -3,7 +3,7 @@
  */
 const path = require('path');
 const fs = require('fs');
-const { News, Course, Material, Schedule, User, Department, Group } = require('../models');
+const { News, Course, Material, Schedule, User, Department, Group, Category } = require('../models');
 const { Op } = require('sequelize');
 const { ApiError } = require('../middleware/errorHandler');
 
@@ -192,11 +192,12 @@ exports.deleteCourse = async (req, res, next) => {
 
 exports.getMaterials = async (req, res, next) => {
   try {
-    const { courseId, type, teacherId, published, search } = req.query;
+    const { courseId, type, teacherId, published, search, categoryId } = req.query;
     const where = {};
     if (courseId) where.courseId = parseInt(courseId, 10);
     if (type) where.type = type;
     if (teacherId) where.teacherId = parseInt(teacherId, 10);
+    if (categoryId) where.categoryId = parseInt(categoryId, 10);
     if (published !== undefined) where.isPublished = published === 'true';
     if (search) {
       const { Op } = require('sequelize');
@@ -208,6 +209,7 @@ exports.getMaterials = async (req, res, next) => {
       include: [
         { model: User, as: 'teacher', attributes: ['id', 'firstName', 'lastName'] },
         { model: Course, as: 'course', attributes: ['id', 'name'] },
+        { model: Category, as: 'category', attributes: ['id', 'name', 'code', 'color', 'icon'] },
       ],
       order: [['created_at', 'DESC']],
     });
@@ -652,7 +654,7 @@ exports.getTeachers = async (req, res, next) => {
 
 exports.createMaterial = async (req, res, next) => {
   try {
-    const { title, description, courseId, type, isPublished } = req.body;
+    const { title, description, courseId, type, isPublished, categoryId } = req.body;
 
     if (!title || !courseId) {
       if (req.file) require('fs').unlinkSync(req.file.path);
@@ -681,6 +683,7 @@ exports.createMaterial = async (req, res, next) => {
       fileSize,
       mimeType,
       type: type || 'methodical',
+      categoryId: categoryId ? parseInt(categoryId, 10) : null,
       isPublished: isPublished === 'true' || isPublished === true || false,
       publishedAt: (isPublished === 'true' || isPublished === true) ? new Date() : null,
     });
@@ -689,6 +692,7 @@ exports.createMaterial = async (req, res, next) => {
       include: [
         { model: User, as: 'teacher', attributes: ['id', 'firstName', 'lastName'] },
         { model: Course, as: 'course', attributes: ['id', 'name'] },
+        { model: Category, as: 'category', attributes: ['id', 'name', 'code', 'color', 'icon'] },
       ],
     });
 
@@ -704,7 +708,7 @@ exports.createMaterial = async (req, res, next) => {
 exports.updateMaterial = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, courseId, type, isPublished } = req.body;
+    const { title, description, courseId, type, isPublished, categoryId } = req.body;
 
     const material = await Material.findByPk(id);
     if (!material) {
@@ -723,6 +727,7 @@ exports.updateMaterial = async (req, res, next) => {
     if (description !== undefined) updateData.description = description;
     if (courseId !== undefined) updateData.courseId = parseInt(courseId, 10);
     if (type !== undefined) updateData.type = type;
+    if (categoryId !== undefined) updateData.categoryId = categoryId ? parseInt(categoryId, 10) : null;
     if (isPublished !== undefined) {
       updateData.isPublished = isPublished === 'true' || isPublished === true;
       if (updateData.isPublished && !material.publishedAt) {
@@ -751,6 +756,7 @@ exports.updateMaterial = async (req, res, next) => {
       include: [
         { model: User, as: 'teacher', attributes: ['id', 'firstName', 'lastName'] },
         { model: Course, as: 'course', attributes: ['id', 'name'] },
+        { model: Category, as: 'category', attributes: ['id', 'name', 'code', 'color', 'icon'] },
       ],
     });
 

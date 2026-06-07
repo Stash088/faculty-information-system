@@ -45,6 +45,12 @@ import {
 } from '@mui/icons-material';
 import api from '../api/axios';
 import ApplicantContentEditor from '../components/ApplicantContentEditor';
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from '../api/categories';
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -59,6 +65,7 @@ function AdminPage() {
   const [departments, setDepartments] = useState([]);
   const [groups, setGroups] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [formData, setFormData] = useState({});
   const [selectedFile, setSelectedFile] = useState(null);
@@ -83,6 +90,14 @@ function AdminPage() {
       } else if (activeTab === 'materials') {
         const res = await api.get('/materials');
         setMaterials(res.data.data || []);
+        // Загружаем категории для фильтра/формы
+        if (categories.length === 0) {
+          const catRes = await getCategories();
+          setCategories(catRes.data || []);
+        }
+      } else if (activeTab === 'categories') {
+        const res = await getCategories();
+        setCategories(res.data || []);
       } else if (activeTab === 'courses') {
         const res = await api.get('/courses');
         setCourses(res.data.data || []);
@@ -170,6 +185,7 @@ function AdminPage() {
         data.append('courseId', formData.courseId);
         data.append('type', formData.type || 'methodical');
         data.append('isPublished', formData.isPublished || false);
+        if (formData.categoryId) data.append('categoryId', formData.categoryId);
         if (selectedFile) {
           data.append('file', selectedFile);
         }
@@ -181,6 +197,16 @@ function AdminPage() {
           await api.post('/materials', data, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
+        }
+      } else if (activeTab === 'categories') {
+        if (!formData.name || !formData.code) {
+          setError('Название и код обязательны');
+          return;
+        }
+        if (formData.id) {
+          await updateCategory(formData.id, formData);
+        } else {
+          await createCategory(formData);
         }
       } else if (activeTab === 'users') {
         if (formData.id) {
@@ -220,19 +246,23 @@ function AdminPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('Удалить запись?')) return;
     try {
-      const endpoints = {
-        news: `/news/${id}`,
-        materials: `/materials/${id}`,
-        courses: `/courses/${id}`,
-        users: `/users/${id}`,
-        departments: `/departments/${id}`,
-        groups: `/groups/${id}`,
-      };
-      const url = endpoints[activeTab];
-      if (url) {
-        await api.delete(url);
-        fetchData();
+      if (activeTab === 'categories') {
+        await deleteCategory(id);
+      } else {
+        const endpoints = {
+          news: `/news/${id}`,
+          materials: `/materials/${id}`,
+          courses: `/courses/${id}`,
+          users: `/users/${id}`,
+          departments: `/departments/${id}`,
+          groups: `/groups/${id}`,
+        };
+        const url = endpoints[activeTab];
+        if (url) {
+          await api.delete(url);
+        }
       }
+      fetchData();
     } catch (err) {
       setError(err.response?.data?.message || 'Ошибка удаления');
       console.error(err);
@@ -252,6 +282,7 @@ function AdminPage() {
   const tabs = [
     { key: 'news', label: 'Новости' },
     { key: 'materials', label: 'Материалы' },
+    { key: 'categories', label: 'Категории' },
     { key: 'courses', label: 'Курсы' },
     { key: 'departments', label: 'Кафедры' },
     { key: 'groups', label: 'Группы' },
@@ -348,6 +379,7 @@ function AdminPage() {
                 <TableCell>ID</TableCell>
                 <TableCell>Название</TableCell>
                 <TableCell>Курс</TableCell>
+                <TableCell>Категория</TableCell>
                 <TableCell>Тип</TableCell>
                 <TableCell>Файл</TableCell>
                 <TableCell>Действия</TableCell>
@@ -359,6 +391,17 @@ function AdminPage() {
                   <TableCell>{item.id}</TableCell>
                   <TableCell>{item.title}</TableCell>
                   <TableCell>{item.course?.name || '—'}</TableCell>
+                  <TableCell>
+                    {item.category ? (
+                      <Chip
+                        label={item.category.name}
+                        size="small"
+                        sx={{ bgcolor: item.category.color || '#1976d2', color: 'white' }}
+                      />
+                    ) : (
+                      <Chip label="—" size="small" variant="outlined" />
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Chip label={item.type} size="small" />
                   </TableCell>
@@ -381,6 +424,57 @@ function AdminPage() {
                       <EditIcon />
                     </IconButton>
                     <IconButton onClick={() => handleDelete(item.id)} color="error" title="Удалить">
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      {/* Categories Table */}
+      {activeTab === 'categories' && (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Цвет</TableCell>
+                <TableCell>Название</TableCell>
+                <TableCell>Код</TableCell>
+                <TableCell>Описание</TableCell>
+                <TableCell>Материалов</TableCell>
+                <TableCell>Активна</TableCell>
+                <TableCell>Действия</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {categories.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.id}</TableCell>
+                  <TableCell>
+                    <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: item.color, border: '1px solid #ccc' }} />
+                  </TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell><code>{item.code}</code></TableCell>
+                  <TableCell sx={{ maxWidth: 300 }}>{item.description || '—'}</TableCell>
+                  <TableCell>
+                    <Chip label={item.materialsCount || 0} size="small" color="primary" />
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={item.isActive ? 'Да' : 'Нет'}
+                      color={item.isActive ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleOpenDialog(item)} title="Редактировать">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(item.id)} color="error" title="Удалить" disabled={(item.materialsCount || 0) > 0}>
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -556,9 +650,79 @@ function AdminPage() {
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
           {formData.id ? 'Редактировать' : 'Добавить'}{' '}
-          {activeTab === 'news' ? 'новость' : activeTab === 'courses' ? 'курс' : activeTab === 'materials' ? 'материал' : 'пользователя'}
+          {activeTab === 'news' ? 'новость' :
+           activeTab === 'courses' ? 'курс' :
+           activeTab === 'materials' ? 'материал' :
+           activeTab === 'categories' ? 'категорию' :
+           activeTab === 'departments' ? 'кафедру' :
+           activeTab === 'groups' ? 'группу' :
+           'пользователя'}
         </DialogTitle>
         <DialogContent>
+          {activeTab === 'categories' && (
+            <>
+              <TextField
+                fullWidth
+                label="Название"
+                value={formData.name || ''}
+                onChange={(e) => handleChange('name', e.target.value)}
+                margin="normal"
+                required
+              />
+              <TextField
+                fullWidth
+                label="Код (уникальный, латиницей)"
+                value={formData.code || ''}
+                onChange={(e) => handleChange('code', e.target.value)}
+                margin="normal"
+                required
+                helperText="Например: programming, math, physics"
+              />
+              <TextField
+                fullWidth
+                label="Описание"
+                value={formData.description || ''}
+                onChange={(e) => handleChange('description', e.target.value)}
+                margin="normal"
+                multiline
+                rows={2}
+              />
+              <TextField
+                fullWidth
+                label="Цвет (HEX)"
+                value={formData.color || '#1976d2'}
+                onChange={(e) => handleChange('color', e.target.value)}
+                margin="normal"
+                helperText="Например: #1976d2"
+              />
+              <TextField
+                fullWidth
+                label="Иконка (Material-UI icon name)"
+                value={formData.icon || 'Folder'}
+                onChange={(e) => handleChange('icon', e.target.value)}
+                margin="normal"
+                helperText="Folder, Code, Calculate, Science, Security, и т.д."
+              />
+              <TextField
+                fullWidth
+                label="Порядок сортировки"
+                value={formData.order || 0}
+                onChange={(e) => handleChange('order', parseInt(e.target.value, 10) || 0)}
+                margin="normal"
+                type="number"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.isActive !== false}
+                    onChange={(e) => handleChange('isActive', e.target.checked)}
+                  />
+                }
+                label="Активна"
+                sx={{ mt: 2 }}
+              />
+            </>
+          )}
           {activeTab === 'news' && (
             <>
               <TextField
@@ -699,6 +863,24 @@ function AdminPage() {
                 >
                   {courses.map((c) => (
                     <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Категория</InputLabel>
+                <Select
+                  value={formData.categoryId || ''}
+                  onChange={(e) => handleChange('categoryId', e.target.value)}
+                  label="Категория"
+                >
+                  <MenuItem value="">Без категории</MenuItem>
+                  {categories.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: c.color }} />
+                        {c.name}
+                      </Box>
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>

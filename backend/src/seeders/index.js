@@ -3,7 +3,7 @@
  * @module seeders
  */
 
-const { Role, User, Department, Group, Course, News, Material, Schedule, ApplicantContent } = require('../models');
+const { Role, User, Department, Group, Course, News, Material, Schedule, ApplicantContent, Category } = require('../models');
 const logger = require('../utils/logger');
 
 /**
@@ -168,11 +168,73 @@ const seedNews = async () => {
 };
 
 /**
- * Сидер материалов
+ * Сидер категорий материалов (ФТ-Д7)
+ * Категория — тематическая группа, независимая от type
  */
-const seedMaterials = async () => {
+const seedCategories = async () => {
+  const categories = [
+    { name: 'Программирование', code: 'programming', description: 'Языки программирования, алгоритмы, структуры данных, паттерны проектирования', color: '#1976d2', icon: 'Code', order: 1 },
+    { name: 'Базы данных', code: 'databases', description: 'Реляционные и NoSQL БД, SQL, проектирование, оптимизация запросов', color: '#9c27b0', icon: 'Storage', order: 2 },
+    { name: 'Веб-разработка', code: 'webdev', description: 'HTML, CSS, JavaScript, React, Node.js, REST API', color: '#2e7d32', icon: 'Language', order: 3 },
+    { name: 'Математика', code: 'math', description: 'Высшая математика, линейная алгебра, математический анализ, дискретная математика', color: '#ed6c02', icon: 'Calculate', order: 4 },
+    { name: 'Физика', code: 'physics', description: 'Общая физика, механика, электричество, оптика, квантовая физика', color: '#d32f2f', icon: 'Science', order: 5 },
+    { name: 'Информационная безопасность', code: 'infosec', description: 'Криптография, защита информации, сетевая безопасность, аудит', color: '#7b1fa2', icon: 'Security', order: 6 },
+    { name: 'Иностранные языки', code: 'languages', description: 'Английский, немецкий и другие иностранные языки для IT', color: '#0288d1', icon: 'Translate', order: 7 },
+    { name: 'Общие материалы', code: 'general', description: 'Методические указания, общие пособия, вспомогательные материалы', color: '#616161', icon: 'MenuBook', order: 99 },
+  ];
+
+  const created = {};
+  for (const cat of categories) {
+    const [c] = await Category.findOrCreate({
+      where: { code: cat.code },
+      defaults: { ...cat, isActive: true },
+    });
+    created[cat.code] = c.id;
+  }
+  logger.info('✓ Категории созданы');
+  return created;
+};
+
+/**
+ * Маппинг course code → category code
+ * Используется в seedMaterials для автоприсвоения категории
+ */
+const COURSE_CODE_TO_CATEGORY = {
+  CS: 'programming',        // CS101, CS201, CS202, CS301, CS302
+  MA: 'math',                // MA101, MA102, MA201, MA202
+  PH: 'physics',             // PH101, PH102, PH201
+  IB: 'infosec',             // IB101
+  MM: 'math',                // MM101 (математическое моделирование)
+  ML: 'programming',        // ML101 (машинное обучение)
+  FL: 'languages',           // FL101 (foreign language)
+};
+
+/**
+ * Сидер материалов
+ * @param {Object} categoriesMap - { 'programming': 1, 'math': 4, ... }
+ */
+const seedMaterials = async (categoriesMap = {}) => {
+  // Маппинг courseId → categoryCode (на основе текущих course.code)
+  const courseCategory = {
+    1: 'programming',   // CS101 Введение в программирование
+    2: 'programming',   // CS201 Структуры данных
+    3: 'programming',   // CS202 Алгоритмы и их анализ
+    4: 'databases',     // CS301 Базы данных
+    5: 'webdev',        // CS302 Веб-разработка
+    6: 'math',          // MA101 Высшая математика I
+    7: 'math',          // MA102 Математический анализ
+    8: 'math',          // MA201 Дискретная математика
+    9: 'math',          // MA202 Теория вероятностей
+    10: 'physics',      // PH101 Общая физика I
+    11: 'physics',      // PH102 Общая физика II
+    12: 'physics',      // PH201 Оптика
+    13: 'infosec',      // IB101 Информационная безопасность
+    14: 'math',         // MM101 Математическое моделирование
+    15: 'programming',  // ML101 Машинное обучение
+  };
+
   const materials = [
-    // CS курсы
+    // CS курсы → programming
     { title: 'Лекция: Введение в Python', courseId: 1, teacherId: 2, type: 'lecture', filePath: '/uploads/cs101_lecture1.pdf', fileName: 'cs101_lecture1.pdf', fileSize: 1024000, mimeType: 'application/pdf' },
     { title: 'Практика: Переменные и типы данных', courseId: 1, teacherId: 2, type: 'practice', filePath: '/uploads/cs101_practice1.pdf', fileName: 'cs101_practice1.pdf', fileSize: 512000, mimeType: 'application/pdf' },
     { title: 'Методичка по Python', courseId: 1, teacherId: 2, type: 'methodical', filePath: '/uploads/python_guide.pdf', fileName: 'python_guide.pdf', fileSize: 2048000, mimeType: 'application/pdf' },
@@ -181,25 +243,31 @@ const seedMaterials = async () => {
     { title: 'Лекция: Алгоритмы сортировки', courseId: 3, teacherId: 4, type: 'lecture', filePath: '/uploads/cs202_lecture1.pdf', fileName: 'cs202_lecture1.pdf', fileSize: 1280000, mimeType: 'application/pdf' },
     { title: 'Лекция: Введение в SQL', courseId: 4, teacherId: 4, type: 'lecture', filePath: '/uploads/cs301_lecture1.pdf', fileName: 'cs301_lecture1.pdf', fileSize: 1400000, mimeType: 'application/pdf' },
     { title: 'Практика: SQL запросы', courseId: 4, teacherId: 4, type: 'practice', filePath: '/uploads/cs301_practice1.pdf', fileName: 'cs301_practice1.pdf', fileSize: 640000, mimeType: 'application/pdf' },
-    // МАТ курсы
+    // МАТ курсы → math
     { title: 'Лекция: Матрицы и определители', courseId: 6, teacherId: 5, type: 'lecture', filePath: '/uploads/ma101_lecture1.pdf', fileName: 'ma101_lecture1.pdf', fileSize: 1800000, mimeType: 'application/pdf' },
     { title: 'Практика: Решение задач', courseId: 6, teacherId: 5, type: 'practice', filePath: '/uploads/ma101_practice1.pdf', fileName: 'ma101_practice1.pdf', fileSize: 900000, mimeType: 'application/pdf' },
     { title: 'Лекция: Пределы функций', courseId: 7, teacherId: 5, type: 'lecture', filePath: '/uploads/ma102_lecture1.pdf', fileName: 'ma102_lecture1.pdf', fileSize: 1600000, mimeType: 'application/pdf' },
     { title: 'Лекция: Комбинаторика', courseId: 8, teacherId: 5, type: 'lecture', filePath: '/uploads/ma201_lecture1.pdf', fileName: 'ma201_lecture1.pdf', fileSize: 1200000, mimeType: 'application/pdf' },
-    // ФИЗ курсы
+    // ФИЗ курсы → physics
     { title: 'Лекция: Кинематика', courseId: 10, teacherId: 6, type: 'lecture', filePath: '/uploads/ph101_lecture1.pdf', fileName: 'ph101_lecture1.pdf', fileSize: 2000000, mimeType: 'application/pdf' },
     { title: 'Практика: Законы Ньютона', courseId: 10, teacherId: 6, type: 'practice', filePath: '/uploads/ph101_practice1.pdf', fileName: 'ph101_practice1.pdf', fileSize: 800000, mimeType: 'application/pdf' },
     { title: 'Лекция: Электростатика', courseId: 11, teacherId: 6, type: 'lecture', filePath: '/uploads/ph102_lecture1.pdf', fileName: 'ph102_lecture1.pdf', fileSize: 1900000, mimeType: 'application/pdf' },
-    // ИЯЗ курсы
-    { title: 'Учебник: English for Beginners', courseId: 13, teacherId: 2, type: 'methodical', filePath: '/uploads/fl101_textbook.pdf', fileName: 'fl101_textbook.pdf', fileSize: 5000000, mimeType: 'application/pdf' },
-    { title: 'Лекция: Basic Grammar', courseId: 13, teacherId: 2, type: 'lecture', filePath: '/uploads/fl101_lecture1.pdf', fileName: 'fl101_lecture1.pdf', fileSize: 800000, mimeType: 'application/pdf' },
+    // ИБ → infosec
+    { title: 'Учебник: Основы информационной безопасности', courseId: 13, teacherId: 2, type: 'methodical', filePath: '/uploads/fl101_textbook.pdf', fileName: 'ib101_textbook.pdf', fileSize: 5000000, mimeType: 'application/pdf' },
+    { title: 'Лекция: Криптография и защита данных', courseId: 13, teacherId: 2, type: 'lecture', filePath: '/uploads/fl101_lecture1.pdf', fileName: 'ib101_lecture1.pdf', fileSize: 800000, mimeType: 'application/pdf' },
   ];
 
   for (const material of materials) {
-    await Material.findOrCreate({
+    const categoryCode = courseCategory[material.courseId];
+    const categoryId = categoryCode ? categoriesMap[categoryCode] : null;
+    const [, created] = await Material.findOrCreate({
       where: { title: material.title },
-      defaults: { ...material, isPublished: true },
+      defaults: { ...material, categoryId, isPublished: true },
     });
+    // Если материал уже существовал без categoryId — обновим
+    if (!created && categoryId && !material.categoryId) {
+      await Material.update({ categoryId }, { where: { title: material.title } });
+    }
   }
   logger.info('✓ Материалы созданы');
 };
@@ -420,7 +488,8 @@ const seedDatabase = async () => {
     await seedUsers();
     await seedCourses();
     await seedNews();
-    await seedMaterials();
+    const categoriesMap = await seedCategories();
+    await seedMaterials(categoriesMap);
     await seedSchedule();
     await seedApplicantContent();
 

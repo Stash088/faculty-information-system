@@ -28,6 +28,9 @@ import {
   Alert,
   FormControlLabel,
   Switch,
+  ToggleButton,
+  ToggleButtonGroup,
+  Stack,
 } from '@mui/material';
 import {
   Download,
@@ -43,13 +46,17 @@ import {
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import api from '../api/axios';
+import { getCategories } from '../api/categories';
 
 function MaterialsPage() {
   const { user } = useSelector((state) => state.auth);
   const [materials, setMaterials] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterType, setFilterType] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [formData, setFormData] = useState({
@@ -57,6 +64,7 @@ function MaterialsPage() {
     description: '',
     courseId: '',
     type: 'methodical',
+    categoryId: '',
     isPublished: false,
   });
   const [selectedFile, setSelectedFile] = useState(null);
@@ -74,12 +82,14 @@ function MaterialsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [materialsRes, coursesRes] = await Promise.all([
+      const [materialsRes, coursesRes, categoriesRes] = await Promise.all([
         api.get('/materials'),
         api.get('/courses'),
+        getCategories(),
       ]);
       setMaterials(materialsRes.data.data || []);
       setCourses(coursesRes.data.data || []);
+      setCategories(Array.isArray(categoriesRes?.data) ? categoriesRes.data : []);
     } catch (err) {
       console.error('Ошибка загрузки данных:', err);
     } finally {
@@ -95,6 +105,7 @@ function MaterialsPage() {
         description: material.description || '',
         courseId: material.courseId,
         type: material.type,
+        categoryId: material.categoryId || '',
         isPublished: material.isPublished,
       });
     } else {
@@ -104,6 +115,7 @@ function MaterialsPage() {
         description: '',
         courseId: '',
         type: 'methodical',
+        categoryId: '',
         isPublished: false,
       });
     }
@@ -154,6 +166,7 @@ function MaterialsPage() {
       data.append('courseId', formData.courseId);
       data.append('type', formData.type);
       data.append('isPublished', formData.isPublished);
+      if (formData.categoryId) data.append('categoryId', formData.categoryId);
       if (selectedFile) {
         data.append('file', selectedFile);
       }
@@ -236,11 +249,25 @@ function MaterialsPage() {
     return isAdmin || material.teacherId === user?.id;
   };
 
-  const filteredMaterials = materials.filter(
-    (material) =>
-      material.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      material.course?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMaterials = materials.filter((material) => {
+    // Поиск по тексту
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const inTitle = material.title?.toLowerCase().includes(q);
+      const inCourse = material.course?.name?.toLowerCase().includes(q);
+      const inCategory = material.category?.name?.toLowerCase().includes(q);
+      if (!inTitle && !inCourse && !inCategory) return false;
+    }
+    // Фильтр по категории
+    if (filterCategory && material.categoryId !== parseInt(filterCategory, 10)) {
+      return false;
+    }
+    // Фильтр по типу
+    if (filterType && material.type !== filterType) {
+      return false;
+    }
+    return true;
+  });
 
   if (loading) {
     return (
@@ -270,20 +297,69 @@ function MaterialsPage() {
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <TextField
-        fullWidth
-        placeholder="Поиск материалов..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        sx={{ mb: 3 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Search />
-            </InputAdornment>
-          ),
-        }}
-      />
+      {/* Фильтры */}
+      <Card sx={{ mb: 3, p: 2 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              placeholder="Поиск материалов..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Категория</InputLabel>
+              <Select
+                value={filterCategory}
+                label="Категория"
+                onChange={(e) => setFilterCategory(e.target.value)}
+              >
+                <MenuItem value="">Все категории</MenuItem>
+                {categories.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Тип</InputLabel>
+              <Select
+                value={filterType}
+                label="Тип"
+                onChange={(e) => setFilterType(e.target.value)}
+              >
+                <MenuItem value="">Все типы</MenuItem>
+                <MenuItem value="lecture">Лекция</MenuItem>
+                <MenuItem value="practice">Практика</MenuItem>
+                <MenuItem value="lab">Лабораторная</MenuItem>
+                <MenuItem value="methodical">Методический</MenuItem>
+                <MenuItem value="additional">Дополнительный</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+        {(filterCategory || filterType || searchQuery) && (
+          <Stack direction="row" spacing={1} sx={{ mt: 2 }} flexWrap="wrap" gap={1}>
+            <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+              Найдено: {filteredMaterials.length} из {materials.length}
+            </Typography>
+            <Button size="small" onClick={() => { setSearchQuery(''); setFilterCategory(''); setFilterType(''); }}>
+              Сбросить фильтры
+            </Button>
+          </Stack>
+        )}
+      </Card>
 
       {filteredMaterials.length === 0 ? (
         <Card>
@@ -301,11 +377,11 @@ function MaterialsPage() {
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
                     {getFileIcon(material.mimeType)}
-                    <Box sx={{ flexGrow: 1 }}>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                       <Typography variant="h6" fontWeight="bold" noWrap>
                         {material.title}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" noWrap>
                         {material.course?.name}
                       </Typography>
                     </Box>
@@ -328,6 +404,17 @@ function MaterialsPage() {
                   )}
 
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                    {material.category && (
+                      <Chip
+                        label={material.category.name}
+                        size="small"
+                        sx={{
+                          bgcolor: material.category.color || '#1976d2',
+                          color: 'white',
+                          fontWeight: 500,
+                        }}
+                      />
+                    )}
                     <Chip
                       label={getTypeLabel(material.type)}
                       color={getTypeColor(material.type)}
@@ -336,20 +423,6 @@ function MaterialsPage() {
                     {material.fileSize > 0 && (
                       <Chip
                         label={`${(material.fileSize / 1024).toFixed(1)} КБ`}
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
-                    {material.views > 0 && (
-                      <Chip
-                        label={`${material.views} просм.`}
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
-                    {material.downloads > 0 && (
-                      <Chip
-                        label={`${material.downloads} скач.`}
                         size="small"
                         variant="outlined"
                       />
@@ -420,6 +493,25 @@ function MaterialsPage() {
               >
                 {courses.map((c) => (
                   <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Категория</InputLabel>
+              <Select
+                value={formData.categoryId}
+                onChange={(e) => handleChange('categoryId', e.target.value)}
+                label="Категория"
+              >
+                <MenuItem value="">Без категории</MenuItem>
+                {categories.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: c.color }} />
+                      {c.name}
+                    </Box>
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
