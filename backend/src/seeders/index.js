@@ -500,4 +500,4 @@ const seedDatabase = async () => {
   }
 };
 
-module.exports = { seedDatabase, isDataSeeded };
+module.exports = { seedDatabase, isDataSeeded, seedCategories, seedApplicantContent, ensureContent };
