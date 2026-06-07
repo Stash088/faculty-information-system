@@ -260,13 +260,14 @@ const seedMaterials = async (categoriesMap = {}) => {
   for (const material of materials) {
     const categoryCode = courseCategory[material.courseId];
     const categoryId = categoryCode ? categoriesMap[categoryCode] : null;
-    const [, created] = await Material.findOrCreate({
+    const [existing, created] = await Material.findOrCreate({
       where: { title: material.title },
       defaults: { ...material, categoryId, isPublished: true },
     });
-    // Если материал уже существовал без categoryId — обновим
-    if (!created && categoryId && !material.categoryId) {
-      await Material.update({ categoryId }, { where: { title: material.title } });
+    // Если материал уже существовал и у него нет правильной categoryId — обновим
+    if (!created && categoryId && existing.categoryId !== categoryId) {
+      existing.categoryId = categoryId;
+      await existing.save();
     }
   }
   logger.info('✓ Материалы созданы');
