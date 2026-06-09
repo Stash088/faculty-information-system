@@ -88,7 +88,7 @@ function Layout() {
       >
         <School sx={{ mr: 1, color: 'primary.main' }} />
         <Typography variant="h6" noWrap component="div" fontWeight="bold">
-          ИС ИТНиЦТ
+          Факультет
         </Typography>
       </Toolbar>
       <Divider />
